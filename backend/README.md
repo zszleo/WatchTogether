@@ -1,5 +1,7 @@
 # WatchTogether 后端服务
 
+[← 返回项目主页](../README.md)
+
 基于 Spring Boot 的 WatchTogether 同步观影平台后端服务。
 
 ## 功能特性

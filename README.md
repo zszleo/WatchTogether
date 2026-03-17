@@ -23,10 +23,14 @@
 
 ```
 watchTogether/
-├── frontend/          # 前端项目 (Vue 3)
-├── backend/           # 后端项目 (Spring Boot)
-└── docs/              # 项目文档
+├── [frontend](./frontend)          # 前端项目 (Vue 3)
+├── [backend](./backend)           # 后端项目 (Spring Boot)
+└── [docs](./docs)                 # 项目文档
 ```
+
+详细文档:
+- [前端 README](./frontend/README.md)
+- [后端 README](./backend/README.md)
 
 ## 快速开始
 
