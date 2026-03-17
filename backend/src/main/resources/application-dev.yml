@@ -1,0 +1,56 @@
+# Development environment configuration
+spring:
+  # MySQL Database Configuration for dev
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:watchTogether}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:u_watchTogether}
+    password: ${DB_PASSWORD:%zswtdMiMa1}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+  
+  # JPA Configuration for dev
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  
+  # Redis Configuration for dev
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:}
+  
+  # Enable H2 console for dev
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Logging Configuration for dev
+logging:
+  level:
+    com.watchtogether: ${LOG_LEVEL_COM_WATCHTOGETHER:INFO}
+    org.springframework.web: ${LOG_LEVEL_SPRING_WEB:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_HIBERNATE_BINDER:TRACE}
+  file:
+    name: ${LOG_FILE_PATH:logs/application-dev.log}
+
+# Enable Swagger and debug features for dev
+springdoc:
+  swagger-ui:
+    enabled: true
+    try-it-out-enabled: true
+
+# Development-specific features
+app:
+  features:
+    debug-endpoints: true
+    mock-data: false

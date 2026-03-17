@@ -1,0 +1,44 @@
+/* frontend/src/styles/variables.css */
+:root {
+  /* 主色调 */
+  --bg-primary: #f7f5f0;
+  --bg-secondary: #efece6;
+  --bg-tertiary: #e5e0d6;
+  
+  /* 强调色 */
+  --accent-primary: #a7c3a6;
+  --accent-secondary: #c4d4bc;
+  --accent-caramel: #c4824a;
+  --accent-caramel-light: #d9a066;
+  
+  /* 功能色 */
+  --text-primary: #2d3436;
+  --text-secondary: #636e72;
+  --text-muted: #9ca3af;
+  
+  /* 状态色 */
+  --success: #a7c3a6;
+  --error: #e07a5f;
+  --online: #81b29a;
+  
+  /* 字体 */
+  --font-display: 'Noto Serif SC', serif;
+  --font-body: 'Nunito', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* 圆角 */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+  
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.4s ease;
+}

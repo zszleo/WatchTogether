@@ -1,0 +1,51 @@
+# Test environment configuration (used for Docker)
+spring:
+  # MySQL Database Configuration for test
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:watchtogether}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:u_watchTogether}
+    password: ${DB_PASSWORD:%zswtdMiMa1}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 15
+      minimum-idle: 5
+  
+  # JPA Configuration for test
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  
+  # Redis Configuration for test
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:}
+
+# Logging Configuration for test
+logging:
+  level:
+    com.watchtogether: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: logs/application-test.log
+
+# Swagger configuration for test
+springdoc:
+  swagger-ui:
+    enabled: true
+    try-it-out-enabled: false
+
+# Test-specific settings
+app:
+  upload:
+    dir: /app/uploads
+  features:
+    debug-endpoints: false
+    mock-data: false

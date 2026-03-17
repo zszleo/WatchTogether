@@ -1,0 +1,92 @@
+# Production environment configuration
+spring:
+  # MySQL Database Configuration for prod
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&verifyServerCertificate=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
+  
+  # JPA Configuration for prod
+  jpa:
+    hibernate:
+      ddl-auto: validate  # In production, validate schema instead of updating
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 50
+  
+  # Redis Configuration for prod
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD}
+      timeout: 10000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 5000ms
+
+# Logging Configuration for prod
+logging:
+  level:
+    com.watchtogether: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: ERROR
+  file:
+    name: logs/application-prod.log
+    max-size: 50MB
+    max-history: 100
+
+# Security settings for prod
+springdoc:
+  swagger-ui:
+    enabled: false  # Disable Swagger UI in production
+  api-docs:
+    enabled: false  # Disable API docs in production
+
+# Production-specific settings
+server:
+  # Enable compression
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  
+  # Security headers
+  forwarded-headers-strategy: framework
+  
+  # SSL configuration (uncomment and configure for production)
+  # ssl:
+  #   key-store: classpath:keystore.p12
+  #   key-store-password: ${SSL_KEY_STORE_PASSWORD}
+  #   key-store-type: PKCS12
+  #   key-alias: tomcat
+  #   key-password: ${SSL_KEY_PASSWORD}
+
+# Production application settings
+app:
+  upload:
+    dir: /app/uploads
+  features:
+    debug-endpoints: false
+    mock-data: false
+  
+  # Security
+  security:
+    cors:
+      allowed-origins: ${ALLOWED_ORIGINS:https://yourdomain.com}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true

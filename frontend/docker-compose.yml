@@ -1,0 +1,63 @@
+services:
+  # 前端服务
+  frontend:
+    build: .
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:18080/api
+      - VITE_SOCKET_URL=http://localhost:19090
+      - VITE_USE_MOCK=false
+    depends_on:
+      - backend
+    networks:
+      - watchtogether-network
+
+  # 后端服务（示例，需要实际的后端 Dockerfile）
+  backend:
+    build: ../backend
+    ports:
+      - "18080:18080"
+      - "19090:19090"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/watchtogether
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - watchtogether-network
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=watchtogether
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - watchtogether-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - watchtogether-network
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  watchtogether-network:
+    driver: bridge

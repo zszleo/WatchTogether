@@ -1,0 +1,116 @@
+# Default profile
+spring:
+  profiles:
+    active: dev
+
+---
+# Base configuration shared across all profiles
+server:
+  port: 18080
+  servlet:
+    context-path: /
+  # File upload settings
+  max-file-size: 100MB
+  max-request-size: 100MB
+
+spring:
+  application:
+    name: watchtogether-backend
+  
+  # Redis Configuration (common)
+  data:
+    redis:
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+  # File upload configuration
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  # JPA Configuration (common)
+  jpa:
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+# Socket.io Configuration
+socketio:
+  host: ${SOCKETIO_HOST:0.0.0.0}
+  port: ${SOCKETIO_PORT:19090}
+  # Max frame payload length (10MB)
+  max-frame-payload-length: 10485760
+  # Max HTTP content length (10MB)
+  max-http-content-length: 10485760
+  # Ping timeout (60 seconds)
+  ping-timeout: 60000
+  # Ping interval (25 seconds)
+  ping-interval: 25000
+  # Enable/disable TCP nodelay
+  tcp-nodelay: true
+  # Enable/disable TCP keepalive
+  tcp-keepalive: true
+
+# Application Settings
+app:
+  # Session settings
+  session:
+    ttl-days: 7
+    id-prefix: sess_
+    id-length: 12
+  
+  # Room settings
+  room:
+    id-length: 6
+    max-users-default: 5
+    cleanup-interval-hours: 24
+  
+  # File upload settings
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}
+    allowed-extensions: ${ALLOWED_EXTENSIONS:.mp4,.webm,.mkv,.mov,.avi}
+    max-size-mb: ${MAX_FILE_SIZE_MB:100}
+
+# OpenAPI / Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+    default-models-expand-depth: 2
+    default-model-expand-depth: 2
+  packages-to-scan: com.watchtogether.controller
+  paths-to-match: /api/**
+  show-actuator: false
+  components:
+  securitySchemes:
+    ApiKeyAuth:                     # 方案名称，可任意命名
+      type: apiKey                   # 类型为 API Key
+      in: header                     # 位置：请求头
+      name: X-Session-Id                # 具体的请求头名称
+
+# Logging Configuration (common)
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    max-size: ${LOG_FILE_MAX_SIZE:10MB}
+    max-history: ${LOG_FILE_MAX_HISTORY:30}

@@ -1,0 +1,87 @@
+services:
+  # Backend application
+  app:
+    build: .
+    container_name: watchtogether-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: test
+      # Database Configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: watchtogether
+      DB_USERNAME: watchtogether
+      DB_PASSWORD: watchtogether
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+      REDIS_PASSWORD:
+      # Application Settings
+      UPLOAD_DIR: /app/uploads
+      LOG_LEVEL_COM_WATCHTOGETHER: INFO
+      SHOW_SQL: "false"
+      # Socket.io Configuration
+      SOCKETIO_HOST: 0.0.0.0
+      SOCKETIO_PORT: 19090
+    ports:
+      - "18080:18080"
+      - "19090:19090"
+    volumes:
+      # Mount uploads directory for persistent storage
+      - uploads_data:/app/uploads
+      # Mount logs directory for persistent storage
+      - logs_data:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18080/api/health/simple"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mysql:
+    image: mysql:8.0
+    container_name: watchtogether-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: watchtogether
+      MYSQL_USER: watchtogether
+      MYSQL_PASSWORD: watchtogether
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "watchtogether", "-pwatchtogether"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: watchtogether-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:
+  logs_data:
