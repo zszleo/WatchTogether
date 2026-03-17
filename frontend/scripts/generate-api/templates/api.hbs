@@ -1,0 +1,226 @@
+/**
+ * {{info.title}} - 自动生成的API客户端
+ * 版本: {{info.version}}
+ * 生成时间: {{now}}
+ * 
+ * {{info.description}}
+ */
+
+{{#if config.useAxios}}
+import axios from 'axios';
+{{else}}
+// 使用fetch API
+{{/if}}
+
+{{#if config.baseUrl}}
+const BASE_URL = {{config.baseUrl}};
+{{else}}
+const BASE_URL = '';
+{{/if}}
+
+{{#if config.requestInterceptor}}
+// 请求拦截器
+axios.interceptors.request.use({{config.requestInterceptor}});
+{{/if}}
+
+{{#if config.responseInterceptor}}
+// 响应拦截器
+axios.interceptors.response.use({{config.responseInterceptor}});
+{{/if}}
+
+/**
+ * 创建API请求实例
+ */
+function createRequest() {
+  {{#if config.useAxios}}
+  return axios.create({
+    baseURL: BASE_URL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  {{else}}
+  // 使用fetch的基础请求函数
+  async function request(url, options = {}) {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  }
+  return { request };
+  {{/if}}
+}
+
+const api = createRequest();
+
+{{#if config.generateMock}}
+/**
+ * Mock数据模式
+ */
+let MOCK_MODE = false;
+const mockResponses = new Map();
+
+function enableMock() {
+  MOCK_MODE = true;
+}
+
+function disableMock() {
+  MOCK_MODE = false;
+}
+
+function setMockResponse(apiName, response) {
+  mockResponses.set(apiName, response);
+}
+
+function clearMockResponses() {
+  mockResponses.clear();
+}
+{{/if}}
+
+{{! 按标签分组生成API模块 }}
+{{#each tags}}
+{{#if endpoints.length}}
+// ============================================
+// {{name}} API
+// {{description}}
+// ============================================
+
+export const {{camelCase name}}Api = {
+  {{#each endpoints}}
+{{{jsdoc}}}
+  {{functionName}}: async ({{#if parameters}}params{{/if}}{{#if parameters}}{{#if requestBody}}, {{/if}}{{/if}}{{#if requestBody}}data{{/if}}) => {
+    {{#if config.generateMock}}
+    if (MOCK_MODE) {
+      const mockResponse = mockResponses.get('{{functionName}}');
+      if (mockResponse) {
+        return Promise.resolve(mockResponse);
+      }
+      {{#if responses.[200]}}
+      // 默认mock响应
+      return Promise.resolve({{{json responses.[200].content.[application/json].example}}});
+      {{else}}
+      return Promise.resolve({});
+      {{/if}}
+    }
+    {{/if}}
+    
+    {{! 构建请求配置 }}
+    const config = {
+      method: '{{method}}',
+      url: `{{pathWithParams}}`,
+    };
+    
+    {{! 处理路径参数 }}
+    {{#if pathParams.length}}
+    const urlParams = {
+      {{#each pathParams}}
+      {{this}}: params?.{{this}},
+      {{/each}}
+    };
+    config.url = config.url.replace(/\{(\w+)\}/g, (match, key) => urlParams[key]);
+    {{/if}}
+    
+    {{! 处理查询参数 }}
+    {{#if queryParams.length}}
+    config.params = {
+      {{#each queryParams}}
+      {{this}}: params?.{{this}},
+      {{/each}}
+    };
+    {{/if}}
+    
+    {{! 处理请求头参数 }}
+    {{#if headerParams.length}}
+    config.headers = {
+      {{#each headerParams}}
+      '{{this}}': params?.{{this}},
+      {{/each}}
+    };
+    {{/if}}
+    
+    {{! 处理请求体 }}
+    {{#if requestBody}}
+    config.data = data;
+    {{/if}}
+    
+    {{! 发送请求 }}
+    {{#if config.useAxios}}
+    try {
+      const response = await api.request(config);
+      return response.data;
+    } catch (error) {
+      console.error('API请求失败:', error);
+      throw error;
+    }
+    {{else}}
+    try {
+      const options = {
+        method: config.method,
+        headers: config.headers,
+      };
+      
+      if (config.data) {
+        options.body = JSON.stringify(config.data);
+      }
+      
+      const url = config.params 
+        ? `${config.url}?${new URLSearchParams(config.params).toString()}`
+        : config.url;
+        
+      return await api.request(url, options);
+    } catch (error) {
+      console.error('API请求失败:', error);
+      throw error;
+    }
+    {{/if}}
+  }{{#unless @last}},{{/unless}}
+  {{/each}}
+};
+{{/if}}
+{{/each}}
+
+{{! 导出所有API模块 }}
+export default {
+  {{#each tags}}
+  {{#if endpoints.length}}
+  {{camelCase name}}Api,
+  {{/if}}
+  {{/each}}
+  
+  {{#if config.generateMock}}
+  // Mock功能
+  enableMock,
+  disableMock,
+  setMockResponse,
+  clearMockResponses,
+  {{/if}}
+  
+  // 工具函数
+  createRequest,
+};
+
+{{! 工具函数 }}
+function camelCase(str) {
+  return str
+    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .split(' ')
+    .map((word, index) => {
+      if (index === 0) return word.toLowerCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join('');
+}
+
+function json(obj) {
+  return JSON.stringify(obj, null, 2);
+}
