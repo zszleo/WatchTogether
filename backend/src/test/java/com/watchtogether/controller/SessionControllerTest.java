@@ -2,6 +2,7 @@ package com.watchtogether.controller;
 
 import com.watchtogether.dto.resp.ApiResp;
 import com.watchtogether.dto.resp.SessionResp;
+import com.watchtogether.dto.req.CreateSessionReq;
 import com.watchtogether.dto.req.UpdateProfileReq;
 import com.watchtogether.model.Room;
 import com.watchtogether.model.Session;
@@ -231,5 +232,222 @@ class SessionControllerTest {
             sessionController.leaveRoom(sessionId, historyId);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void createSession_WithValidRequest_ShouldCreateAndReturnSession() {
+        // Arrange
+        CreateSessionReq request = new CreateSessionReq();
+        request.setNickname("TestUser");
+        request.setAvatar("avatar.jpg");
+        
+        Session newSession = new Session();
+        newSession.setId("new-session-123");
+        newSession.setNickname("TestUser");
+        newSession.setAvatar("avatar.jpg");
+        newSession.setIsOnline(false);
+        newSession.setCreatedAt(LocalDateTime.now());
+        newSession.setLastSeenAt(LocalDateTime.now());
+
+        when(sessionService.createSession("TestUser", "avatar.jpg")).thenReturn(newSession);
+
+        // Act
+        ResponseEntity<ApiResp<SessionResp>> response = 
+            sessionController.createSession(request);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertEquals("new-session-123", response.getBody().getData().getId());
+        assertEquals("TestUser", response.getBody().getData().getNickname());
+        assertEquals("avatar.jpg", response.getBody().getData().getAvatar());
+        
+        verify(sessionService).createSession("TestUser", "avatar.jpg");
+    }
+
+    @Test
+    void createSession_WithNullAvatar_ShouldCreateSessionWithNullAvatar() {
+        // Arrange
+        CreateSessionReq request = new CreateSessionReq();
+        request.setNickname("TestUser");
+        request.setAvatar(null);
+        
+        Session newSession = new Session();
+        newSession.setId("new-session-123");
+        newSession.setNickname("TestUser");
+        newSession.setAvatar(null);
+        newSession.setIsOnline(false);
+        newSession.setCreatedAt(LocalDateTime.now());
+        newSession.setLastSeenAt(LocalDateTime.now());
+
+        when(sessionService.createSession("TestUser", null)).thenReturn(newSession);
+
+        // Act
+        ResponseEntity<ApiResp<SessionResp>> response = 
+            sessionController.createSession(request);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertNull(response.getBody().getData().getAvatar());
+        
+        verify(sessionService).createSession("TestUser", null);
+    }
+
+    @Test
+    void getSession_WithExistingSession_ShouldReturnSession() {
+        // Arrange
+        String sessionId = "session-123";
+        when(sessionService.getSession(sessionId)).thenReturn(Optional.of(mockSession));
+
+        // Act
+        ResponseEntity<ApiResp<SessionResp>> response = 
+            sessionController.getSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertEquals(sessionId, response.getBody().getData().getId());
+        assertEquals("TestUser", response.getBody().getData().getNickname());
+        
+        verify(sessionService).getSession(sessionId);
+    }
+
+    @Test
+    void getSession_WithNonExistentSession_ShouldReturnNotFound() {
+        // Arrange
+        String sessionId = "non-existent-session";
+        when(sessionService.getSession(sessionId)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<ApiResp<SessionResp>> response = 
+            sessionController.getSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Session not found"));
+        
+        verify(sessionService).getSession(sessionId);
+    }
+
+    @Test
+    void deleteSession_WithExistingSession_ShouldDeleteSuccessfully() {
+        // Arrange
+        String sessionId = "session-123";
+        when(sessionService.validateSession(sessionId)).thenReturn(true);
+
+        // Act
+        ResponseEntity<ApiResp<Void>> response = 
+            sessionController.deleteSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Session deleted successfully"));
+        
+        verify(sessionService).validateSession(sessionId);
+        verify(sessionService).deleteSession(sessionId);
+    }
+
+    @Test
+    void deleteSession_WithNonExistentSession_ShouldReturnNotFound() {
+        // Arrange
+        String sessionId = "non-existent-session";
+        when(sessionService.validateSession(sessionId)).thenReturn(false);
+
+        // Act
+        ResponseEntity<ApiResp<Void>> response = 
+            sessionController.deleteSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Session not found"));
+        
+        verify(sessionService).validateSession(sessionId);
+        verify(sessionService, never()).deleteSession(anyString());
+    }
+
+    @Test
+    void validateSession_WithValidSession_ShouldReturnTrue() {
+        // Arrange
+        String sessionId = "session-123";
+        when(sessionService.validateSession(sessionId)).thenReturn(true);
+
+        // Act
+        ResponseEntity<ApiResp<Boolean>> response = 
+            sessionController.validateSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertTrue(response.getBody().getData());
+        
+        verify(sessionService).validateSession(sessionId);
+    }
+
+    @Test
+    void validateSession_WithInvalidSession_ShouldReturnFalse() {
+        // Arrange
+        String sessionId = "invalid-session";
+        when(sessionService.validateSession(sessionId)).thenReturn(false);
+
+        // Act
+        ResponseEntity<ApiResp<Boolean>> response = 
+            sessionController.validateSession(sessionId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertFalse(response.getBody().getData());
+        
+        verify(sessionService).validateSession(sessionId);
+    }
+
+    @Test
+    void updateProfile_WithUpdateSessionReturningEmpty_ShouldReturnNotFound() {
+        // Arrange
+        String sessionId = "session-123";
+        UpdateProfileReq request = new UpdateProfileReq();
+        request.setNickname("NewNickname");
+        request.setAvatar("new-avatar");
+
+        when(sessionService.validateSession(sessionId)).thenReturn(true);
+        when(sessionService.updateSession(eq(sessionId), eq("NewNickname"), eq("new-avatar")))
+            .thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<ApiResp<SessionResp>> response = 
+            sessionController.updateProfile(sessionId, request);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Session not found"));
+        
+        verify(sessionService).validateSession(sessionId);
+        verify(sessionService).updateSession(sessionId, "NewNickname", "new-avatar");
+    }
+
+    @Test
+    void getHistory_WithCustomLimit_ShouldUseProvidedLimit() {
+        // Arrange
+        String sessionId = "session-123";
+        List<SessionHistory> histories = Arrays.asList(mockHistory);
+
+        when(sessionService.validateSession(sessionId)).thenReturn(true);
+        when(historyService.getUserHistoryWithLimit(sessionId, 10)).thenReturn(histories);
+
+        // Act
+        ResponseEntity<ApiResp<List<SessionHistory>>> response = 
+            sessionController.getHistory(sessionId, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertEquals(1, response.getBody().getData().size());
+        
+        verify(historyService).getUserHistoryWithLimit(sessionId, 10);
     }
 }

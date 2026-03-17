@@ -73,11 +73,22 @@ public class FileController {
         }
 
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null) {
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
             return new ResponseEntity<>(ApiResp.badRequest("Invalid file name"), HttpStatus.BAD_REQUEST);
         }
 
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        // Check if file has an extension
+        int dotIndex = originalFilename.lastIndexOf(".");
+        if (dotIndex < 0) {
+            return new ResponseEntity<>(ApiResp.badRequest("File must have an extension"), HttpStatus.BAD_REQUEST);
+        }
+        
+        // Check if extension is valid (not just a dot at the end)
+        if (dotIndex == originalFilename.length() - 1) {
+            return new ResponseEntity<>(ApiResp.badRequest("File extension cannot be empty"), HttpStatus.BAD_REQUEST);
+        }
+        
+        String extension = originalFilename.substring(dotIndex);
         List<String> allowed = Arrays.asList(allowedExtensions.split(","));
 
         if (!allowed.contains(extension.toLowerCase())) {
