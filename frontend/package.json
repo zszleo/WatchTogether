@@ -8,7 +8,6 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:run": "vitest run",
     "generate:api": "node scripts/openapi-generator/index.js --output-dir './src/services' --utils-dir './src/utils'"
   },
   "dependencies": {
