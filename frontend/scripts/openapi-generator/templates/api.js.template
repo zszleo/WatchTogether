@@ -1,0 +1,9 @@
+/**
+ * API 调用函数模板
+ * {{description}}
+ * 生成时间: {{generatedAt}}
+ */
+
+{{imports}}
+
+{{apiGroups}}

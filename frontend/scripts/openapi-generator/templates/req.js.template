@@ -1,0 +1,7 @@
+/**
+ * 请求参数对象模板
+ * {{description}}
+ * 生成时间: {{generatedAt}}
+ */
+
+{{requestObjects}}

@@ -9,9 +9,7 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run",
-    "generate-api": "node scripts/generate-api/generate-api.js",
-    "generate-api:watch": "node scripts/generate-api/generate-api.js --watch",
-    "generate-api:clean": "node scripts/generate-api/generate-api.js --clean"
+    "generate:api": "node scripts/openapi-generator/index.js --output-dir './src/services' --utils-dir './src/utils'"
   },
   "dependencies": {
     "vue": "^3.4.0",
