@@ -118,6 +118,73 @@ function sanitizeIdentifier(str) {
   return str.replace(/[^\w\u4e00-\u9fa5]/g, '');
 }
 
+function extractResourceFromPaths(paths) {
+  if (!paths || paths.length === 0) return 'Default';
+  
+  // 统计路径段出现频率
+  const segmentCounts = {};
+  const apiSegmentCounts = {};
+  
+  for (const path of paths) {
+    // 移除路径参数，如 {sessionId}
+    const cleanPath = path.replace(/\{[^}]+\}/g, '');
+    const segments = cleanPath.split('/').filter(segment => segment.length > 0);
+    
+    // 跳过空段和API段
+    for (const segment of segments) {
+      if (segment === 'api') continue;
+      segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
+    }
+    
+    // 特别记录 /api/ 后的第一个非API段
+    for (let i = 0; i < segments.length; i++) {
+      if (segments[i] === 'api' && i + 1 < segments.length) {
+        const resourceSegment = segments[i + 1];
+        if (resourceSegment) {
+          apiSegmentCounts[resourceSegment] = (apiSegmentCounts[resourceSegment] || 0) + 1;
+        }
+        break;
+      }
+    }
+  }
+  
+  // 优先使用 /api/ 后的资源段
+  if (Object.keys(apiSegmentCounts).length > 0) {
+    const apiResources = Object.entries(apiSegmentCounts).sort((a, b) => b[1] - a[1]);
+    return apiResources[0][0];
+  }
+  
+  // 如果没有找到 /api/ 段，使用最常见的段
+  if (Object.keys(segmentCounts).length > 0) {
+    const sortedSegments = Object.entries(segmentCounts).sort((a, b) => b[1] - a[1]);
+    return sortedSegments[0][0];
+  }
+  
+  return 'Default';
+}
+
+function translateTagToClassName(tag, paths) {
+  // 首先尝试从路径提取资源名
+  const resourceName = extractResourceFromPaths(paths);
+  
+  // 单数转复数处理
+  let className = resourceName;
+  if (className.endsWith('s')) {
+    // 已经是复数形式，保持原样
+  } else if (className.endsWith('y')) {
+    // 如 category -> categories
+    className = className.slice(0, -1) + 'ies';
+  } else {
+    // 添加s
+    className = className + 's';
+  }
+  
+  // 首字母大写
+  className = capitalize(className);
+  
+  return className;
+}
+
 /**
  * 生成请求参数对象
  */
@@ -213,7 +280,18 @@ function generateResponseObjects(doc, config) {
       processed.add(operationId);
       
       const responses = operation.responses || {};
-      const successResponse = responses['200'] || responses['201'] || responses['default'];
+      
+      // 查找任何成功响应 (2xx) 或 default
+      let successResponse = null;
+      let successStatusCode = null;
+      
+      for (const [statusCode, response] of Object.entries(responses)) {
+        if (statusCode.startsWith('2') || statusCode === 'default') {
+          successResponse = response;
+          successStatusCode = statusCode;
+          break;
+        }
+      }
       
       if (!successResponse) continue;
       
@@ -223,30 +301,57 @@ function generateResponseObjects(doc, config) {
         properties: {}
       };
       
-      if (successResponse.content && successResponse.content['application/json']) {
-        const schema = successResponse.content['application/json'].schema;
-        if (schema) {
-          if (schema.$ref) {
-            respObj.properties['data'] = {
-              type: 'object',
-              description: '响应数据',
-              ref: schema.$ref,
-              refName: schema.refName
-            };
-          } else if (schema.type === 'array' && schema.items) {
-            respObj.properties['data'] = {
-              type: 'array',
-              description: '响应数据列表',
-              items: schema.items.$ref ? { ref: schema.items.$ref, refName: schema.items.refName } : { type: schema.items.type }
-            };
-          } else if (schema.type === 'object' || schema.properties) {
-            respObj.properties['data'] = {
-              type: 'object',
-              description: '响应数据',
-              properties: parseProperties(schema.properties, doc.components?.schemas)
-            };
+      // 查找任何JSON内容
+      let jsonContent = null;
+      if (successResponse.content) {
+        // 优先使用 application/json
+        if (successResponse.content['application/json']) {
+          jsonContent = successResponse.content['application/json'];
+        } else {
+          // 查找其他可能的JSON内容类型
+          for (const [contentType, content] of Object.entries(successResponse.content)) {
+            if (contentType.includes('json') || contentType.includes('application/')) {
+              jsonContent = content;
+              break;
+            }
           }
         }
+      }
+      
+      if (jsonContent && jsonContent.schema) {
+        const schema = jsonContent.schema;
+        if (schema.$ref) {
+          respObj.properties['data'] = {
+            type: 'object',
+            description: '响应数据',
+            ref: schema.$ref,
+            refName: schema.refName
+          };
+        } else if (schema.type === 'array' && schema.items) {
+          respObj.properties['data'] = {
+            type: 'array',
+            description: '响应数据列表',
+            items: schema.items.$ref ? { ref: schema.items.$ref, refName: schema.items.refName } : { type: schema.items.type }
+          };
+        } else if (schema.type === 'object' || schema.properties) {
+          respObj.properties['data'] = {
+            type: 'object',
+            description: '响应数据',
+            properties: parseProperties(schema.properties, doc.components?.schemas)
+          };
+        } else if (schema.type) {
+          // 基本类型：string, number, boolean, integer
+          respObj.properties['data'] = {
+            type: schema.type,
+            description: '响应数据'
+          };
+        }
+      } else if (successResponse.description) {
+        // 即使没有schema，也创建一个基本响应对象
+        respObj.properties['data'] = {
+          type: 'any',
+          description: successResponse.description || '响应数据'
+        };
       }
       
       if (Object.keys(respObj.properties).length > 0) {
@@ -286,11 +391,30 @@ function generateAPIFunctions(doc, config) {
   const functions = [];
   
   for (const group of Object.values(apiGroups)) {
-    const className = `${capitalize(sanitizeIdentifier(group.tag))}Api`;
+    // 收集该组所有路径
+    const paths = group.operations.map(op => op.path);
+    const resourceName = translateTagToClassName(group.tag, paths);
+    const className = `${resourceName}Api`;
     const operations = [];
     
+    const usedNames = new Set();
     for (const op of group.operations) {
-      const funcName = camelCase(op.operationId.replace(/^(get|post|put|delete|patch)/i, ''));
+      let funcName = camelCase(op.operationId);
+      // 确保首字母小写
+      if (funcName[0] === funcName[0].toUpperCase()) {
+        funcName = funcName[0].toLowerCase() + funcName.slice(1);
+      }
+      // 处理冲突：如果名称已使用，添加方法前缀
+      let baseName = funcName;
+      let suffix = 1;
+      while (usedNames.has(funcName)) {
+        funcName = `${camelCase(op.method)}${capitalize(baseName)}`;
+        if (suffix > 1) {
+          funcName += suffix;
+        }
+        suffix++;
+      }
+      usedNames.add(funcName);
       const method = op.method.toUpperCase();
       
       // 构建参数
@@ -314,24 +438,39 @@ function generateAPIFunctions(doc, config) {
         params.push('data');
       }
       
+      // 请求选项参数
+      params.push('options = {}');
+      
       // 生成 JSDoc
       let jsdoc = `/**\n * ${op.summary || op.operationId}\n`;
       if (op.description) {
         jsdoc += ` * ${op.description}\n`;
       }
-      jsdoc += ` * @param {Object} options - 请求选项\n`;
+
       
       for (const p of pathParams) {
-        jsdoc += ` * @param {${p.schema?.type || 'string'}} options.${p.name} - ${p.description || p.name}\n`;
+        jsdoc += ` * @param {${p.schema?.type || 'string'}} ${p.name} - ${p.description || p.name}\n`;
       }
       if (queryParams.length > 0) {
-        jsdoc += ` * @param {Object} options.queryParams - 查询参数\n`;
+        jsdoc += ` * @param {Object} queryParams - 查询参数\n`;
       }
       if (hasBody) {
-        jsdoc += ` * @param {Object} options.data - 请求体数据\n`;
+        jsdoc += ` * @param {Object} data - 请求体数据\n`;
       }
+      jsdoc += ` * @param {Object} [options={}] - 请求选项（如headers、timeout等）\n`;
       jsdoc += ` * @returns {Promise} Promise对象\n */`;
       
+      // 生成参数定义对象（用于参数过滤和严格模式）
+      const paramDefinitions = {};
+      queryParams.forEach(p => {
+        paramDefinitions[p.name] = {
+          type: p.schema?.type || 'string',
+          description: p.description || '',
+          required: p.required || false,
+          in: p.in
+        };
+      });
+
       operations.push({
         jsdoc,
         name: funcName,
@@ -344,7 +483,8 @@ function generateAPIFunctions(doc, config) {
         hasBody: hasBody,
         queryParamDefs: queryParams,
         pathParamDefs: pathParams,
-        requestBody: op.requestBody
+        requestBody: op.requestBody,
+        paramDefinitions
       });
     }
     
@@ -384,17 +524,43 @@ import { request } from '../utils/${config.requestFileName.replace('.js', '')}';
       content += `    const path = \`${pathTemplate}\`;\n`;
       
       const requestOptions = [];
-      if (op.hasPathParams) {
-        requestOptions.push('params: { ' + (op.pathParamDefs || []).map(p => p.name).join(', ') + ' }');
-      }
       if (op.hasQueryParams) {
-        requestOptions.push('params: { ...params, ...queryParams }');
+        requestOptions.push('params: queryParams');
       }
       if (op.hasBody) {
         requestOptions.push('data');
       }
       
-      content += `    return request(path, { method: '${op.method}'${requestOptions.length > 0 ? ', ' + requestOptions.join(', ') : ''} });\n`;
+      // 构建完整的请求选项
+      const allOptions = [];
+      allOptions.push(`method: '${op.method}'`);
+      
+      if (op.hasQueryParams) {
+        allOptions.push('params: queryParams');
+      }
+      if (op.hasBody) {
+        allOptions.push('data');
+      }
+      
+      // 参数过滤和严格模式配置
+      if (config.filterUnknownParams && op.hasQueryParams && Object.keys(op.paramDefinitions).length > 0) {
+        const allowedParams = Object.keys(op.paramDefinitions);
+        allOptions.push(`allowedParams: ${JSON.stringify(allowedParams)}`);
+      }
+      
+      if (config.strictMode) {
+        allOptions.push('strictMode: true');
+      }
+      
+      // 参数定义（用于严格模式验证）
+      if (Object.keys(op.paramDefinitions).length > 0) {
+        allOptions.push(`paramDefinitions: ${JSON.stringify(op.paramDefinitions, null, 2)}`);
+      }
+      
+      // 用户传递的options
+      allOptions.push('...options');
+      
+      content += `    return request(path, { ${allOptions.join(', ')} });\n`;
       content += `  },\n`;
     }
     
@@ -423,8 +589,31 @@ function renderReqTemplate(requestObjects, config) {
 `;
     
     for (const [propName, prop] of Object.entries(req.properties)) {
+      let type = prop.type || 'any';
+      // 如果有引用，使用引用类型
+      if (prop.refName) {
+        type = prop.refName;
+      } else if (prop.ref) {
+        // 从$ref中提取类型名
+        const refParts = prop.ref.split('/');
+        type = refParts[refParts.length - 1] || 'any';
+      }
+      
+      // 如果是数组且有items.refName
+      if (prop.type === 'array' && prop.items) {
+        let itemType = 'any';
+        if (prop.items.refName) {
+          itemType = prop.items.refName;
+        } else if (prop.items.ref) {
+          const refParts = prop.items.ref.split('/');
+          itemType = refParts[refParts.length - 1] || 'any';
+        } else if (prop.items.type) {
+          itemType = prop.items.type;
+        }
+        type = `${itemType}[]`;
+      }
+      
       const required = prop.required ? '必填' : '可选';
-      const type = prop.type || 'any';
       const desc = prop.description ? ` - ${prop.description}` : '';
       content += ` * @property {${type}} ${propName} - ${required}${desc}\n`;
     }
@@ -454,7 +643,30 @@ function renderRespTemplate(responseObjects, config) {
 `;
     
     for (const [propName, prop] of Object.entries(resp.properties)) {
-      const type = prop.type || 'any';
+      let type = prop.type || 'any';
+      // 如果有引用，使用引用类型
+      if (prop.refName) {
+        type = prop.refName;
+      } else if (prop.ref) {
+        // 从$ref中提取类型名
+        const refParts = prop.ref.split('/');
+        type = refParts[refParts.length - 1] || 'any';
+      }
+      
+      // 如果是数组且有items.refName
+      if (prop.type === 'array' && prop.items) {
+        let itemType = 'any';
+        if (prop.items.refName) {
+          itemType = prop.items.refName;
+        } else if (prop.items.ref) {
+          const refParts = prop.items.ref.split('/');
+          itemType = refParts[refParts.length - 1] || 'any';
+        } else if (prop.items.type) {
+          itemType = prop.items.type;
+        }
+        type = `${itemType}[]`;
+      }
+      
       const desc = prop.description ? ` - ${prop.description}` : '';
       content += ` * @property {${type}} ${propName}${desc}\n`;
     }

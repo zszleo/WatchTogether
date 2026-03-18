@@ -1,0 +1,101 @@
+/**
+ * 请求参数对象
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: 2026-03-18T09:48:17.710Z
+ */
+
+/**
+ * 更新用户资料 请求参数
+ * @typedef {Object} updateProfileRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 离开房间历史记录 请求参数
+ * @typedef {Object} leaveRoomRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} historyId - 必填 - 历史记录ID
+ */
+/**
+ * 加入房间历史记录 请求参数
+ * @typedef {Object} joinRoomRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} roomId - 必填 - 房间ID
+ */
+/**
+ * 上传文件 请求参数
+ * @typedef {Object} uploadFileRequest
+ * @property {string} type - 可选 - 文件类型（video/image等）
+ */
+/**
+ * 获取用户表情 请求参数
+ * @typedef {Object} getUserEmojisRequest
+ * @property {string} sessionId - 必填 - 用户会话ID
+ */
+/**
+ * 获取会话信息 请求参数
+ * @typedef {Object} getSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 删除会话 请求参数
+ * @typedef {Object} deleteSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 验证会话 请求参数
+ * @typedef {Object} validateSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 获取用户历史记录 请求参数
+ * @typedef {Object} getHistoryRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} limit - 可选 - 返回记录数量限制
+ */
+/**
+ * 获取房间详情 请求参数
+ * @typedef {Object} getRoomRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 删除房间 请求参数
+ * @typedef {Object} deleteRoomRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ */
+/**
+ * 获取聊天消息 请求参数
+ * @typedef {Object} getChatMessagesRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {integer} page - 可选 - 页码（从0开始）
+ * @property {integer} size - 可选 - 每页大小
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 获取房间邀请链接 请求参数
+ * @typedef {Object} getInviteLinkRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 通过房间码获取房间详情 请求参数
+ * @typedef {Object} getRoomByCodeRequest
+ * @property {string} roomCode - 必填 - 房间邀请码
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 获取文件信息 请求参数
+ * @typedef {Object} getFileInfoRequest
+ * @property {string} fileId - 必填 - 文件ID
+ * @property {string} sessionId - 必填 - 用户会话ID
+ */
+/**
+ * 删除文件 请求参数
+ * @typedef {Object} deleteFileRequest
+ * @property {string} fileId - 必填 - 文件ID
+ */
+/**
+ * 删除用户表情 请求参数
+ * @typedef {Object} deleteUserEmojiRequest
+ * @property {integer} emojiId - 必填 - 表情ID
+ */

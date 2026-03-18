@@ -28,9 +28,7 @@ const DEFAULT_CONFIG = {
   strictMode: false,
   initRequestFile: true,
   excludeTags: [],
-  customTemplates: null,
-  requestInterceptor: null,
-  responseInterceptor: null
+  customTemplates: null
 };
 
 /**
