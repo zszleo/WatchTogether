@@ -1,7 +1,7 @@
 // frontend/src/stores/room.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { roomApi } from '@/services/api'
+import { RoomApi } from '@/services/api'
 import { socketService } from '@/services/socket'
 
 export const useRoomStore = defineStore('room', () => {
@@ -19,13 +19,13 @@ export const useRoomStore = defineStore('room', () => {
   
   // 创建房间
   async function createRoom(data) {
-    const result = await roomApi.create(data)
+    const result = await RoomApi.createRoom(data)
     return result
   }
   
   // 加入房间
   async function joinRoom(roomId, sessionId = null) {
-    const room = await roomApi.get(roomId)
+    const room = await RoomApi.getRoom(roomId, { sessionId })
     currentRoom.value = room
     
     // 连接Socket并加入
@@ -70,7 +70,7 @@ export const useRoomStore = defineStore('room', () => {
   
   // 获取公开房间列表
   async function fetchPublicRooms() {
-    publicRooms.value = await roomApi.list()
+    publicRooms.value = await RoomApi.getPublicRooms()
   }
   
   return {

@@ -1,7 +1,7 @@
 // frontend/src/stores/chat.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { roomApi } from '@/services/api'
+import { RoomApi } from '@/services/api'
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref([])
@@ -23,7 +23,6 @@ export const useChatStore = defineStore('chat', () => {
     )
     
     if (isDuplicate) {
-      console.log('跳过重复消息:', msg.content)
       return
     }
     
@@ -52,8 +51,8 @@ export const useChatStore = defineStore('chat', () => {
   async function loadHistory(roomId, page = 1) {
     loading.value = true
     try {
-      const data = await roomApi.getMessages(roomId, page)
-      const historicalMessages = data.messages.map(msg => ({
+      const data = await RoomApi.getChatMessages(roomId, { page, size: 20 })
+      const historicalMessages = (data.messages || []).map(msg => ({
         id: msg.id,
         content: msg.content,
         type: msg.messageType,

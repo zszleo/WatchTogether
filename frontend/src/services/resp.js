@@ -1,7 +1,7 @@
 /**
  * 响应参数对象
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-19T02:44:20.793Z
+ * 生成时间: 2026-03-19T08:16:19.866Z
  */
 
 /**
@@ -40,13 +40,13 @@
  * @property {any} data - OK
  */
 /**
- * 获取用户表情 响应数据
- * @typedef {Object} getUserEmojisResponse
+ * 根据昵称获取表情 响应数据
+ * @typedef {Object} getEmojisByNicknameResponse
  * @property {any} data - OK
  */
 /**
- * 添加用户表情 响应数据
- * @typedef {Object} addUserEmojiResponse
+ * 根据昵称添加表情 响应数据
+ * @typedef {Object} addEmojiByNicknameResponse
  * @property {any} data - OK
  */
 /**
@@ -120,7 +120,7 @@
  * @property {any} data - OK
  */
 /**
- * 删除用户表情 响应数据
- * @typedef {Object} deleteUserEmojiResponse
+ * 根据昵称删除表情 响应数据
+ * @typedef {Object} deleteEmojiByNicknameResponse
  * @property {any} data - OK
  */

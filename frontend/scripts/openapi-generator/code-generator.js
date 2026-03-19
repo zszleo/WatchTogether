@@ -164,24 +164,9 @@ function extractResourceFromPaths(paths) {
 }
 
 function translateTagToClassName(tag, paths) {
-  // 首先尝试从路径提取资源名
   const resourceName = extractResourceFromPaths(paths);
-  
-  // 单数转复数处理
   let className = resourceName;
-  if (className.endsWith('s')) {
-    // 已经是复数形式，保持原样
-  } else if (className.endsWith('y')) {
-    // 如 category -> categories
-    className = className.slice(0, -1) + 'ies';
-  } else {
-    // 添加s
-    className = className + 's';
-  }
-  
-  // 首字母大写
   className = capitalize(className);
-  
   return className;
 }
 

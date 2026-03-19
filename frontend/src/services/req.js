@@ -1,7 +1,7 @@
 /**
  * 请求参数对象
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-19T02:44:20.793Z
+ * 生成时间: 2026-03-19T08:16:19.866Z
  */
 
 /**
@@ -27,9 +27,14 @@
  * @property {string} type - 可选 - 文件类型（video/image等）
  */
 /**
- * 获取用户表情 请求参数
- * @typedef {Object} getUserEmojisRequest
- * @property {string} sessionId - 必填 - 用户会话ID
+ * 根据昵称获取表情 请求参数
+ * @typedef {Object} getEmojisByNicknameRequest
+ * @property {string} nickname - 必填 - 用户昵称
+ */
+/**
+ * 根据昵称添加表情 请求参数
+ * @typedef {Object} addEmojiByNicknameRequest
+ * @property {string} nickname - 必填 - 用户昵称
  */
 /**
  * 获取会话信息 请求参数
@@ -95,7 +100,8 @@
  * @property {string} fileId - 必填 - 文件ID
  */
 /**
- * 删除用户表情 请求参数
- * @typedef {Object} deleteUserEmojiRequest
+ * 根据昵称删除表情 请求参数
+ * @typedef {Object} deleteEmojiByNicknameRequest
+ * @property {string} nickname - 必填 - 用户昵称
  * @property {integer} emojiId - 必填 - 表情ID
  */

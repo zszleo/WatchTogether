@@ -14,7 +14,7 @@
  * @returns {Promise} Promise对象
  */
 export async function request(path, options = {}) {
-  const { 
+  let { 
     method = 'GET', 
     params, 
     data, 

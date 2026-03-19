@@ -7,26 +7,30 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest --coverage --run",
+    "test:e2e": "npx playwright-cli test",
+    "test:e2e:record": "npx playwright-cli codegen",
+    "test:e2e:run": "npx playwright-cli run",
     "generate:api": "node scripts/openapi-generator/index.js --output-dir './src/services' --utils-dir './src/utils'"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
     "pinia": "^2.1.7",
     "socket.io-client": "^4.7.2",
-    "video.js": "^8.6.1"
+    "video.js": "^8.6.1",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@playwright/cli": "^0.1.1",
     "@vitejs/plugin-vue": "^5.0.0",
-    "@vue/test-utils": "^2.4.3",
-    "jsdom": "^23.0.1",
-    "vite": "^5.0.0",
-    "vitest": "^1.1.0",
     "@vitest/coverage-v8": "^1.1.0",
-    "handlebars": "^4.7.8",
-    "prettier": "^3.2.5",
+    "@vue/test-utils": "^2.4.3",
     "axios": "^1.6.7",
-    "minimist": "^1.2.8"
+    "handlebars": "^4.7.8",
+    "jsdom": "^23.0.1",
+    "minimist": "^1.2.8",
+    "prettier": "^3.2.5",
+    "vite": "^5.0.0",
+    "vitest": "^1.1.0"
   }
 }

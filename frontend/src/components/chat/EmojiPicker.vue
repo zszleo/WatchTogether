@@ -10,14 +10,14 @@
           :title="emoji.name"
           @mouseover="setPreview(emoji)"
         >
-          {{ emoji.code }}
+          {{ emoji.unicode || emoji.name }}
         </button>
       </div>
     </div>
     
     <div class="emoji-footer">
       <div class="emoji-preview" v-if="previewEmoji">
-        <span class="emoji-preview-code">{{ previewEmoji.code }}</span>
+        <span class="emoji-preview-code">{{ previewEmoji.unicode || previewEmoji.name }}</span>
         <span class="emoji-preview-name">{{ previewEmoji.name }}</span>
       </div>
       <div class="emoji-actions">
@@ -29,7 +29,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { emojiApi } from '@/services/api'
+import { EmojisApi } from '@/services/api'
 
 const emit = defineEmits(['select', 'close'])
 
@@ -45,6 +45,14 @@ const globalEmojiCache = {
   promise: null
 }
 
+// 重置全局缓存（用于测试）
+function resetGlobalCache() {
+  globalEmojiCache.emojis = []
+  globalEmojiCache.loaded = false
+  globalEmojiCache.loading = false
+  globalEmojiCache.promise = null
+}
+
 // 预加载数据
 async function preloadEmojiData() {
   if (globalEmojiCache.loading && globalEmojiCache.promise) {
@@ -58,12 +66,25 @@ async function preloadEmojiData() {
   globalEmojiCache.loading = true
   globalEmojiCache.promise = (async () => {
     try {
-      const emojisData = await emojiApi.list()
-      globalEmojiCache.emojis = emojisData
+      // 先尝试获取默认表情
+      let emojisData = await EmojisApi.getDefaultEmojis()
+      console.log('默认表情数据:', emojisData)
+      
+      // 如果默认表情为空，尝试获取用户表情
+      if (!emojisData || emojisData.length === 0) {
+        const userStore = await import('@/stores/user').then(m => m.useUserStore())
+        console.log('用户昵称:', userStore.nickname)
+        if (userStore.nickname) {
+          emojisData = await EmojisApi.getEmojisByNickname(userStore.nickname)
+          console.log('用户表情数据:', emojisData)
+        }
+      }
+      
+      globalEmojiCache.emojis = emojisData || []
       globalEmojiCache.loaded = true
-      console.log('表情数据预加载完成')
+      console.log('表情缓存已加载:', globalEmojiCache.emojis)
     } catch (error) {
-      console.error('预加载表情数据失败:', error)
+      console.error('加载表情数据失败:', error)
       globalEmojiCache.promise = null
       throw error
     } finally {
@@ -103,14 +124,14 @@ async function loadData() {
     await preloadEmojiData()
     loadDataFromCache()
   } catch (error) {
-    console.error('加载表情数据失败:', error)
+    // 加载表情数据失败
   }
 }
 
 // 选择表情
 function selectEmoji(emoji) {
   previewEmoji.value = emoji
-  emit('select', emoji.code)
+  emit('select', emoji.unicode || emoji.name)
 }
 
 // 鼠标悬停预览
@@ -120,8 +141,8 @@ function setPreview(emoji) {
 
 // 初始化
 onMounted(() => {
-  loadData().catch(error => {
-    console.error('EmojiPicker加载数据时出错:', error)
+  loadData().catch(() => {
+    // 加载数据失败
   })
 })
 </script>

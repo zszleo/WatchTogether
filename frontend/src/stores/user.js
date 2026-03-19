@@ -1,7 +1,7 @@
 // frontend/src/stores/user.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { sessionApi } from '@/services/api'
+import { SessionApi } from '@/services/api'
 
 const STORAGE_KEY = 'watchtogether_user'
 
@@ -37,8 +37,8 @@ export const useUserStore = defineStore('user', () => {
   
   // 创建会话
   async function createSession(nick) {
-    const nickname = nick || `游客${Math.floor(Math.random() * 10000)}`
-    const data = await sessionApi.create(nickname)
+    const nicknameToUse = nick || `游客${Math.floor(Math.random() * 10000)}`
+    const data = await SessionApi.createSession({ nickname: nicknameToUse })
     
     sessionId.value = data.id
     nickname.value = data.nickname
@@ -53,7 +53,7 @@ export const useUserStore = defineStore('user', () => {
   async function updateProfile(data) {
     if (!sessionId.value) return
     
-    const updated = await sessionApi.update(sessionId.value, data)
+    const updated = await SessionApi.updateProfile(sessionId.value, data)
     nickname.value = updated.nickname
     avatar.value = updated.avatar
     saveToStorage()

@@ -45,7 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { sessionApi } from '@/services/api'
+import { SessionApi } from '@/services/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -58,10 +58,9 @@ async function loadHistory() {
   
   loading.value = true
   try {
-    const data = await sessionApi.getHistory(userStore.sessionId)
+    const data = await SessionApi.getHistory(userStore.sessionId)
     history.value = data.rooms || []
   } catch (error) {
-    console.error('加载历史记录失败:', error)
     history.value = []
   } finally {
     loading.value = false

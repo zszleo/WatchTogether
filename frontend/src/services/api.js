@@ -1,15 +1,15 @@
 /**
  * API 调用函数
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-19T02:44:20.793Z
+ * 生成时间: 2026-03-19T08:16:19.866Z
  */
 
 import { request } from '../utils/request';
 
 /**
- * SessionsApi API
+ * SessionApi API
  */
-export const SessionsApi = {
+export const SessionApi = {
   /**
  * 更新用户资料
  * 更新用户的昵称和头像
@@ -19,7 +19,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   updateProfile: async (sessionId, data, options = {}) => {
-    const path = `/api/sessions/${sessionId}/profile`;
+    const path = `/api/session/${sessionId}/profile`;
     return request(path, { method: 'PUT', data, ...options });
   },
   /**
@@ -30,7 +30,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   createSession: async (data, options = {}) => {
-    const path = `/api/sessions`;
+    const path = `/api/session`;
     return request(path, { method: 'POST', data, ...options });
   },
   /**
@@ -42,7 +42,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   leaveRoom: async (sessionId, historyId, options = {}) => {
-    const path = `/api/sessions/${sessionId}/history/${historyId}/leave`;
+    const path = `/api/session/${sessionId}/history/${historyId}/leave`;
     return request(path, { method: 'POST', ...options });
   },
   /**
@@ -54,7 +54,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   joinRoom: async (sessionId, roomId, options = {}) => {
-    const path = `/api/sessions/${sessionId}/history/join/${roomId}`;
+    const path = `/api/session/${sessionId}/history/join/${roomId}`;
     return request(path, { method: 'POST', ...options });
   },
   /**
@@ -65,7 +65,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   getSession: async (sessionId, options = {}) => {
-    const path = `/api/sessions/${sessionId}`;
+    const path = `/api/session/${sessionId}`;
     return request(path, { method: 'GET', ...options });
   },
   /**
@@ -76,7 +76,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   deleteSession: async (sessionId, options = {}) => {
-    const path = `/api/sessions/${sessionId}`;
+    const path = `/api/session/${sessionId}`;
     return request(path, { method: 'DELETE', ...options });
   },
   /**
@@ -87,7 +87,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   validateSession: async (sessionId, options = {}) => {
-    const path = `/api/sessions/${sessionId}/validate`;
+    const path = `/api/session/${sessionId}/validate`;
     return request(path, { method: 'GET', ...options });
   },
   /**
@@ -99,7 +99,7 @@ export const SessionsApi = {
  * @returns {Promise} Promise对象
  */
   getHistory: async (sessionId, queryParams, options = {}) => {
-    const path = `/api/sessions/${sessionId}/history`;
+    const path = `/api/session/${sessionId}/history`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "limit": {
     "type": "integer",
@@ -112,9 +112,9 @@ export const SessionsApi = {
 };
 
 /**
- * RoomsApi API
+ * RoomApi API
  */
-export const RoomsApi = {
+export const RoomApi = {
   /**
  * 获取公开房间列表
  * 获取所有公开可见的房间列表
@@ -122,7 +122,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   getPublicRooms: async (options = {}) => {
-    const path = `/api/rooms`;
+    const path = `/api/room`;
     return request(path, { method: 'GET', ...options });
   },
   /**
@@ -133,7 +133,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   createRoom: async (data, options = {}) => {
-    const path = `/api/rooms`;
+    const path = `/api/room`;
     return request(path, { method: 'POST', data, ...options });
   },
   /**
@@ -145,7 +145,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   getRoom: async (roomId, queryParams, options = {}) => {
-    const path = `/api/rooms/${roomId}`;
+    const path = `/api/room/${roomId}`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "sessionId": {
     "type": "string",
@@ -164,7 +164,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   deleteRoom: async (roomId, data, options = {}) => {
-    const path = `/api/rooms/${roomId}`;
+    const path = `/api/room/${roomId}`;
     return request(path, { method: 'DELETE', data, ...options });
   },
   /**
@@ -176,7 +176,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   getChatMessages: async (roomId, queryParams, options = {}) => {
-    const path = `/api/rooms/${roomId}/messages`;
+    const path = `/api/room/${roomId}/messages`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "page": {
     "type": "integer",
@@ -207,7 +207,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   getInviteLink: async (roomId, queryParams, options = {}) => {
-    const path = `/api/rooms/${roomId}/invite`;
+    const path = `/api/room/${roomId}/invite`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "sessionId": {
     "type": "string",
@@ -226,7 +226,7 @@ export const RoomsApi = {
  * @returns {Promise} Promise对象
  */
   getRoomByCode: async (roomCode, queryParams, options = {}) => {
-    const path = `/api/rooms/code/${roomCode}`;
+    const path = `/api/room/code/${roomCode}`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "sessionId": {
     "type": "string",
@@ -239,9 +239,9 @@ export const RoomsApi = {
 };
 
 /**
- * FilesApi API
+ * FileApi API
  */
-export const FilesApi = {
+export const FileApi = {
   /**
  * 上传文件
  * 上传视频或其他文件，支持的文件类型：.mp4, .webm, .mkv, .mov, .avi，最大100MB
@@ -251,7 +251,7 @@ export const FilesApi = {
  * @returns {Promise} Promise对象
  */
   uploadFile: async (queryParams, data, options = {}) => {
-    const path = `/api/files/upload`;
+    const path = `/api/file/upload`;
     return request(path, { method: 'POST', params: queryParams, data, paramDefinitions: {
   "type": {
     "type": "string",
@@ -270,7 +270,7 @@ export const FilesApi = {
  * @returns {Promise} Promise对象
  */
   getFileInfo: async (fileId, queryParams, options = {}) => {
-    const path = `/api/files/${fileId}`;
+    const path = `/api/file/${fileId}`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "sessionId": {
     "type": "string",
@@ -289,42 +289,36 @@ export const FilesApi = {
  * @returns {Promise} Promise对象
  */
   deleteFile: async (fileId, data, options = {}) => {
-    const path = `/api/files/${fileId}`;
+    const path = `/api/file/${fileId}`;
     return request(path, { method: 'DELETE', data, ...options });
   },
 };
 
 /**
- * EmojisApi API
+ * EmojiApi API
  */
-export const EmojisApi = {
+export const EmojiApi = {
   /**
- * 获取用户表情
- * 获取用户自定义的表情列表，需要有效的会话ID
- * @param {Object} queryParams - 查询参数
+ * 根据昵称获取表情
+ * 根据用户昵称获取自定义的表情列表
+ * @param {string} nickname - 用户昵称
  * @param {Object} [options={}] - 请求选项（如headers、timeout等）
  * @returns {Promise} Promise对象
  */
-  getUserEmojis: async (queryParams, options = {}) => {
-    const path = `/api/emojis/user`;
-    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
-  "sessionId": {
-    "type": "string",
-    "description": "用户会话ID",
-    "required": true,
-    "in": "query"
-  }
-}, ...options });
+  getEmojisByNickname: async (nickname, options = {}) => {
+    const path = `/api/emoji/user/${nickname}`;
+    return request(path, { method: 'GET', ...options });
   },
   /**
- * 添加用户表情
- * 添加用户自定义表情，需要有效的会话ID
+ * 根据昵称添加表情
+ * 根据用户昵称添加自定义表情
+ * @param {string} nickname - 用户昵称
  * @param {Object} data - 请求体数据
  * @param {Object} [options={}] - 请求选项（如headers、timeout等）
  * @returns {Promise} Promise对象
  */
-  addUserEmoji: async (data, options = {}) => {
-    const path = `/api/emojis/user`;
+  addEmojiByNickname: async (nickname, data, options = {}) => {
+    const path = `/api/emoji/user/${nickname}`;
     return request(path, { method: 'POST', data, ...options });
   },
   /**
@@ -334,27 +328,27 @@ export const EmojisApi = {
  * @returns {Promise} Promise对象
  */
   getDefaultEmojis: async (options = {}) => {
-    const path = `/api/emojis/default`;
+    const path = `/api/emoji/default`;
     return request(path, { method: 'GET', ...options });
   },
   /**
- * 删除用户表情
- * 删除用户自定义表情，需要有效的会话ID
+ * 根据昵称删除表情
+ * 根据用户昵称删除自定义表情
+ * @param {string} nickname - 用户昵称
  * @param {integer} emojiId - 表情ID
- * @param {Object} data - 请求体数据
  * @param {Object} [options={}] - 请求选项（如headers、timeout等）
  * @returns {Promise} Promise对象
  */
-  deleteUserEmoji: async (emojiId, data, options = {}) => {
-    const path = `/api/emojis/user/${emojiId}`;
-    return request(path, { method: 'DELETE', data, ...options });
+  deleteEmojiByNickname: async (nickname, emojiId, options = {}) => {
+    const path = `/api/emoji/user/${nickname}/${emojiId}`;
+    return request(path, { method: 'DELETE', ...options });
   },
 };
 
 /**
- * HealthsApi API
+ * HealthApi API
  */
-export const HealthsApi = {
+export const HealthApi = {
   /**
  * 系统健康检查
  * 检查系统及依赖服务（Redis）的健康状态
