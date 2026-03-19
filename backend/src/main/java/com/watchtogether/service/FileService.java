@@ -1,7 +1,6 @@
 package com.watchtogether.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,15 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.DirectoryStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import com.watchtogether.dto.resp.FileInfoResp;
 
+@Slf4j
 @Service
 public class FileService {
-
-    private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -43,9 +38,9 @@ public class FileService {
         
         Files.copy(file.getInputStream(), filePath);
         
-        logger.info("Saved file {} to {}", filename, filePath);
+        log.info("Saved file {} to {}", filename, filePath);
         
-        return "/api/files/" + fileId + "/raw";
+        return "/api/file/" + fileId + "/raw";
     }
 
     private Path findActualPath(String fileId) {
@@ -83,7 +78,7 @@ public class FileService {
                 }
             }
         } catch (IOException e) {
-            logger.warn("Error finding file for {}: {}", fileId, e.getMessage());
+            log.warn("Error finding file for {}: {}", fileId, e.getMessage());
         }
         return null;
     }
@@ -104,7 +99,7 @@ public class FileService {
         try {
             info.setSize(Files.size(actualPath));
         } catch (IOException e) {
-            logger.warn("Could not get file size for {}", fileId);
+            log.warn("Could not get file size for {}", fileId);
             info.setSize(0L);
         }
         
@@ -119,10 +114,10 @@ public class FileService {
         
         try {
             Files.delete(actualPath);
-            logger.info("Deleted file {} from {}", fileId, actualPath);
+            log.info("Deleted file {} from {}", fileId, actualPath);
             return true;
         } catch (IOException e) {
-            logger.error("Failed to delete file {}: {}", fileId, e.getMessage());
+            log.error("Failed to delete file {}: {}", fileId, e.getMessage());
             return false;
         }
     }

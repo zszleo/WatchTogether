@@ -44,7 +44,7 @@ class FileServiceTest {
         String result = fileService.saveFile(file, fileId, "video");
 
         assertNotNull(result);
-        assertTrue(result.contains("/api/files/"));
+        assertTrue(result.contains("/api/file/"));
         assertTrue(Files.exists(tempDir.resolve("videos").resolve(fileId + ".mp4")));
     }
 

@@ -7,11 +7,12 @@ import com.watchtogether.dto.resp.RoomResp;
 import com.watchtogether.model.Room;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
@@ -22,18 +23,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/api/room")
 @Tag(name = "房间管理", description = "创建、加入和管理观看房间相关的API")
+@Slf4j
 public class RoomController {
 
-    private final RoomService roomService;
-    private final SessionService sessionService;
-
-    @Autowired
-    public RoomController(RoomService roomService, SessionService sessionService) {
-        this.roomService = roomService;
-        this.sessionService = sessionService;
-    }
+    @Resource
+    private RoomService roomService;
+    @Resource
+    private SessionService sessionService;
 
     @PostMapping
     @Operation(
@@ -47,6 +45,7 @@ public class RoomController {
             @SessionId
             @Parameter(description = "用户会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("createRoom called with sessionId: {}, request: {}", sessionId, request);
         
         Room room = roomService.createRoom(request, sessionId);
         RoomResp response = mapToRoomResponse(room);
@@ -60,6 +59,7 @@ public class RoomController {
         description = "获取所有公开可见的房间列表"
     )
     public ResponseEntity<ApiResp<List<RoomResp>>> getPublicRooms() {
+        log.info("getPublicRooms called");
         List<RoomResp> rooms = roomService.getPublicRooms();
         return ResponseEntity.ok(ApiResp.success(rooms));
     }
@@ -76,6 +76,7 @@ public class RoomController {
             @SessionId(required = false)
             @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("getRoom called with roomId: {}, sessionId: {}", roomId, sessionId);
         
         Optional<Room> roomOpt = roomService.getRoomById(roomId);
         if (roomOpt.isEmpty()) {

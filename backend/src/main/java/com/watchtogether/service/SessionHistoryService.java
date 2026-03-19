@@ -1,10 +1,11 @@
 package com.watchtogether.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.watchtogether.model.SessionHistory;
 import com.watchtogether.repository.SessionHistoryRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.annotation.Resource;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,16 +15,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class SessionHistoryService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SessionHistoryService.class);
-
-    private final SessionHistoryRepository historyRepository;
-
-    @Autowired
-    public SessionHistoryService(SessionHistoryRepository historyRepository) {
-        this.historyRepository = historyRepository;
-    }
+    @Resource
+    private SessionHistoryRepository historyRepository;
 
     @Transactional
     public SessionHistory joinRoom(String sessionId, Long roomId, String roomName, String videoTitle) {
@@ -34,7 +30,7 @@ public class SessionHistoryService {
         history.setVideoTitle(videoTitle);
 
         SessionHistory saved = historyRepository.save(history);
-        logger.info("Session {} joined room {} (history id: {})", sessionId, roomId, saved.getId());
+        log.info("Session {} joined room {} (history id: {})", sessionId, roomId, saved.getId());
         return saved;
     }
 
@@ -45,7 +41,7 @@ public class SessionHistoryService {
             SessionHistory history = historyOpt.get();
             history.setLeftAt(LocalDateTime.now());
             historyRepository.save(history);
-            logger.info("Session {} left room {} (history id: {})", 
+            log.info("Session {} left room {} (history id: {})", 
                        history.getSessionId(), history.getRoomId(), historyId);
         }
     }

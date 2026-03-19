@@ -13,7 +13,7 @@ public class FileUploadResp {
     @Schema(description = "原始文件名", example = "video.mp4")
     private String filename;
 
-    @Schema(description = "文件访问URL", example = "/api/files/550e8400-e29b-41d4-a716-446655440000/raw")
+    @Schema(description = "文件访问URL", example = "/api/file/550e8400-e29b-41d4-a716-446655440000/raw")
     private String url;
 
     @Schema(description = "文件大小（字节）", example = "1024000")

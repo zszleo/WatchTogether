@@ -9,11 +9,12 @@ import com.watchtogether.model.SessionHistory;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.service.SessionHistoryService;
 import com.watchtogether.service.RoomService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
@@ -24,20 +25,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
-@RequestMapping("/api/sessions")
+@RequestMapping("/api/session")
+@Slf4j
 @Tag(name = "会话管理", description = "用户会话管理相关的API")
 public class SessionController {
 
-    private final SessionService sessionService;
-    private final SessionHistoryService historyService;
-    private final RoomService roomService;
-
-    @Autowired
-    public SessionController(SessionService sessionService, SessionHistoryService historyService, RoomService roomService) {
-        this.sessionService = sessionService;
-        this.historyService = historyService;
-        this.roomService = roomService;
-    }
+    @Resource
+    private SessionService sessionService;
+    @Resource
+    private SessionHistoryService historyService;
+    @Resource
+    private RoomService roomService;
 
     @PostMapping
     @Operation(
@@ -48,6 +46,7 @@ public class SessionController {
             @Valid @RequestBody 
             @Schema(description = "创建会话的请求参数") 
             CreateSessionReq request) {
+        log.info("createSession called with nickname: {}, avatar: {}", request.getNickname(), request.getAvatar());
         Session session = sessionService.createSession(request.getNickname(), request.getAvatar());
         
         SessionResp response = new SessionResp(
@@ -72,6 +71,7 @@ public class SessionController {
             @PathVariable 
             @Parameter(description = "会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("getSession called with sessionId: {}", sessionId);
         Optional<Session> sessionOpt = sessionService.getSession(sessionId);
         
         if (!sessionOpt.isPresent()) {
@@ -101,6 +101,7 @@ public class SessionController {
             @PathVariable 
             @Parameter(description = "会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("deleteSession called with sessionId: {}", sessionId);
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
         }
@@ -118,6 +119,7 @@ public class SessionController {
             @PathVariable 
             @Parameter(description = "会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("validateSession called with sessionId: {}", sessionId);
         boolean isValid = sessionService.validateSession(sessionId);
         return ResponseEntity.ok(ApiResp.success(isValid));
     }
@@ -134,6 +136,7 @@ public class SessionController {
             @Valid @RequestBody 
             @Schema(description = "更新资料请求参数") 
             UpdateProfileReq request) {
+        log.info("updateProfile called with sessionId: {}, nickname: {}, avatar: {}", sessionId, request.getNickname(), request.getAvatar());
         
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
@@ -174,6 +177,7 @@ public class SessionController {
             @RequestParam(defaultValue = "50") 
             @Parameter(description = "返回记录数量限制", example = "50") 
             int limit) {
+        log.info("getHistory called with sessionId: {}, limit: {}", sessionId, limit);
         
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
@@ -195,6 +199,7 @@ public class SessionController {
             @PathVariable 
             @Parameter(description = "房间ID", example = "123") 
             Long roomId) {
+        log.info("joinRoom called with sessionId: {}, roomId: {}", sessionId, roomId);
         
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
@@ -228,6 +233,7 @@ public class SessionController {
             @PathVariable 
             @Parameter(description = "历史记录ID", example = "456") 
             Long historyId) {
+        log.info("leaveRoom called with sessionId: {}, historyId: {}", sessionId, historyId);
         
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);

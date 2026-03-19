@@ -1,13 +1,14 @@
 package com.watchtogether.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.watchtogether.dto.req.CreateRoomReq;
 import com.watchtogether.dto.resp.RoomResp;
 import com.watchtogether.model.Room;
 import com.watchtogether.repository.RoomRepository;
 import com.watchtogether.utils.RedisUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.annotation.Resource;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,19 +19,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class RoomService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RoomService.class);
-
-    private final RedisUtil redisUtil;
-    private final RoomRepository roomRepository;
-
-    @Autowired
-    public RoomService(RedisUtil redisUtil, RoomRepository roomRepository) {
-        this.redisUtil = redisUtil;
-        this.roomRepository = roomRepository;
-    }
+    @Resource
+    public RedisUtil redisUtil;
+    @Resource
+    public RoomRepository roomRepository;
 
     public Room createRoom(CreateRoomReq request, String ownerSessionId) {
         String roomCode = generateRoomCode();
@@ -51,7 +47,7 @@ public class RoomService {
         // Cache room in Redis
         cacheRoom(room);
         
-        logger.info("Created new room: {} (code: {}) owned by session {}", 
+        log.info("Created new room: {} (code: {}) owned by session {}", 
                    room.getId(), roomCode, ownerSessionId);
         return room;
     }
@@ -103,7 +99,7 @@ public class RoomService {
         Room room = roomOpt.get();
         // Check ownership
         if (!sessionId.equals(room.getOwnerSessionId())) {
-            logger.warn("Session {} attempted to delete room {} owned by {}", 
+            log.warn("Session {} attempted to delete room {} owned by {}", 
                        sessionId, roomId, room.getOwnerSessionId());
             return false;
         }
@@ -115,7 +111,7 @@ public class RoomService {
         redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_USERS + roomId);
         redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_PLAYBACK + roomId);
         
-        logger.info("Deleted room: {} (code: {})", roomId, room.getCode());
+        log.info("Deleted room: {} (code: {})", roomId, room.getCode());
         return true;
     }
 

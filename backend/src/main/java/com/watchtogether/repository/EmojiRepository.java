@@ -12,9 +12,9 @@ public interface EmojiRepository extends JpaRepository<Emoji, Long> {
 
     List<Emoji> findByIsDefaultTrueOrderByNameAsc();
 
-    List<Emoji> findBySessionIdOrderByCreatedAtDesc(String sessionId);
+    List<Emoji> findByNicknameOrderByCreatedAtDesc(String nickname);
 
-    Optional<Emoji> findByIdAndSessionId(Long id, String sessionId);
+    Optional<Emoji> findByIdAndNickname(Long id, String nickname);
 
-    void deleteByIdAndSessionId(Long id, String sessionId);
+    void deleteByIdAndNickname(Long id, String nickname);
 }

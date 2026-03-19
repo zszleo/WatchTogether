@@ -26,8 +26,8 @@ public class Emoji {
     @Column(name = "unicode", length = 20)
     private String unicode;
 
-    @Column(name = "session_id", length = 32)
-    private String sessionId;
+    @Column(name = "nickname", length = 50)
+    private String nickname;
 
     @Column(name = "is_default", nullable = false)
     private Boolean isDefault = false;

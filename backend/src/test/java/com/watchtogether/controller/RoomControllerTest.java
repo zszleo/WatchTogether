@@ -96,7 +96,7 @@ class RoomControllerTest {
                 .thenReturn(mockRoom);
 
         // Act & Assert
-        mockMvc.perform(post("/api/rooms")
+        mockMvc.perform(post("/api/room")
                         .header("X-Session-Id", validSessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRoomRequest)))
@@ -113,7 +113,7 @@ class RoomControllerTest {
     @Test
     void createRoom_WithoutSessionId_ShouldReturnUnauthorized() throws Exception {
         // Act & Assert
-        mockMvc.perform(post("/api/rooms")
+        mockMvc.perform(post("/api/room")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRoomRequest)))
                 .andExpect(status().isUnauthorized())
@@ -130,7 +130,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(post("/api/rooms")
+        mockMvc.perform(post("/api/room")
                         .header("X-Session-Id", validSessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRoomRequest)))
@@ -151,7 +151,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(post("/api/rooms")
+        mockMvc.perform(post("/api/room")
                         .header("X-Session-Id", validSessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -168,7 +168,7 @@ class RoomControllerTest {
         when(roomService.getPublicRooms()).thenReturn(Arrays.asList(mockRoomResponse));
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms"))
+        mockMvc.perform(get("/api/room"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data", hasSize(1)))
@@ -185,7 +185,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1")
+        mockMvc.perform(get("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -202,7 +202,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1")
+        mockMvc.perform(get("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -220,7 +220,7 @@ class RoomControllerTest {
         when(roomService.getRoomById(1L)).thenReturn(Optional.of(mockRoom));
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1"))
+        mockMvc.perform(get("/api/room/1"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Access denied to private room")));
@@ -238,7 +238,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
         
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1")
+        mockMvc.perform(get("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -255,7 +255,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/code/ABC123")
+        mockMvc.perform(get("/api/room/code/ABC123")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -271,7 +271,7 @@ class RoomControllerTest {
         when(roomService.getRoomByCode("XYZ789")).thenReturn(Optional.empty());
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/code/XYZ789"))
+        mockMvc.perform(get("/api/room/code/XYZ789"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Room not found")));
@@ -286,7 +286,7 @@ class RoomControllerTest {
         when(roomService.deleteRoom(1L, validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/rooms/1")
+        mockMvc.perform(delete("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -299,7 +299,7 @@ class RoomControllerTest {
     @Test
     void deleteRoom_WithoutSession_ShouldReturnUnauthorized() throws Exception {
         // Act & Assert
-        mockMvc.perform(delete("/api/rooms/1"))
+        mockMvc.perform(delete("/api/room/1"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Missing required session ID in header: X-Session-Id")));
@@ -314,7 +314,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/rooms/1")
+        mockMvc.perform(delete("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -331,7 +331,7 @@ class RoomControllerTest {
         when(roomService.deleteRoom(1L, validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/rooms/1")
+        mockMvc.perform(delete("/api/room/1")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -349,7 +349,7 @@ class RoomControllerTest {
         when(roomService.generateInviteLink("ABC123")).thenReturn("/join/ABC123");
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1/invite")
+        mockMvc.perform(get("/api/room/1/invite")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -367,7 +367,7 @@ class RoomControllerTest {
         when(roomService.getRoomById(1L)).thenReturn(Optional.of(mockRoom));
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1/invite"))
+        mockMvc.perform(get("/api/room/1/invite"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Access denied")));
@@ -384,7 +384,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1/messages")
+        mockMvc.perform(get("/api/room/1/messages")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -402,7 +402,7 @@ class RoomControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(get("/api/rooms/1/messages")
+        mockMvc.perform(get("/api/room/1/messages")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))

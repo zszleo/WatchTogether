@@ -6,17 +6,17 @@ import com.watchtogether.dto.resp.FileInfoResp;
 import com.watchtogether.service.FileService;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.annotation.SessionId;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,24 +25,20 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/api/file")
 @Tag(name = "文件上传", description = "视频和文件上传相关的API")
+@Slf4j
 public class FileController {
 
-    private final FileService fileService;
-    private final SessionService sessionService;
-
+    @Resource
+    private FileService fileService;
+    @Resource
+    private SessionService sessionService;
+    
     @Value("${app.upload.allowed-extensions:.mp4,.webm,.mkv,.mov,.avi}")
     private String allowedExtensions;
-
     @Value("${app.upload.max-size-mb:100}")
     private int maxSizeMb;
-
-    @Autowired
-    public FileController(FileService fileService, SessionService sessionService) {
-        this.fileService = fileService;
-        this.sessionService = sessionService;
-    }
 
     @PostMapping("/upload")
     @Operation(
@@ -63,6 +59,8 @@ public class FileController {
             @SessionId
             @Parameter(description = "用户会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("uploadFile called with fileName: {}, type: {}, sessionId: {}", 
+                file.getOriginalFilename(), type, sessionId);
 
         if (file.isEmpty()) {
             return new ResponseEntity<>(ApiResp.badRequest("File is empty"), HttpStatus.BAD_REQUEST);
@@ -124,6 +122,7 @@ public class FileController {
             @SessionId
             @Parameter(description = "用户会话ID", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("getFileInfo called with fileId: {}, sessionId: {}", fileId, sessionId);
 
         FileInfoResp fileInfo = fileService.getFileInfo(fileId);
         if (fileInfo == null) {
@@ -145,6 +144,7 @@ public class FileController {
             @SessionId
             @Parameter(description = "用户会话ID（必须为文件所有者）", example = "sess_abc123def456") 
             String sessionId) {
+        log.info("deleteFile called with fileId: {}, sessionId: {}", fileId, sessionId);
 
         boolean deleted = fileService.deleteFile(fileId, sessionId);
         if (!deleted) {

@@ -1,11 +1,12 @@
 package com.watchtogether.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.watchtogether.model.Session;
 import com.watchtogether.repository.SessionRepository;
 import com.watchtogether.utils.RedisUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.annotation.Resource;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,19 +15,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class SessionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
-
-    private final RedisUtil redisUtil;
-    private final SessionRepository sessionRepository;
-
-    @Autowired
-    public SessionService(RedisUtil redisUtil, SessionRepository sessionRepository) {
-        this.redisUtil = redisUtil;
-        this.sessionRepository = sessionRepository;
-    }
+    @Resource
+    private RedisUtil redisUtil;
+    @Resource
+    private SessionRepository sessionRepository;
 
     public Session createSession(String nickname, String avatar) {
         String sessionId = generateSessionId();
@@ -50,7 +46,7 @@ public class SessionService {
         sessionData.put("createdAt", session.getCreatedAt().toString());
         redisUtil.setSession(sessionId, sessionData);
         
-        logger.info("Created new session: {} for nickname: {}", sessionId, nickname);
+        log.info("Created new session: {} for nickname: {}", sessionId, nickname);
         return session;
     }
 
@@ -114,7 +110,7 @@ public class SessionService {
             sessionData.put("createdAt", session.getCreatedAt().toString());
             redisUtil.setSession(sessionId, sessionData);
             
-            logger.info("Updated session {} with socket {}", sessionId, socketId);
+            log.info("Updated session {} with socket {}", sessionId, socketId);
         }
     }
 
@@ -136,7 +132,7 @@ public class SessionService {
     public void deleteSession(String sessionId) {
         sessionRepository.deleteById(sessionId);
         redisUtil.deleteSession(sessionId);
-        logger.info("Deleted session: {}", sessionId);
+        log.info("Deleted session: {}", sessionId);
     }
 
     public void joinRoom(String sessionId, Long roomId) {
@@ -147,7 +143,7 @@ public class SessionService {
             session.setLastSeenAt(LocalDateTime.now());
             sessionRepository.save(session);
             
-            logger.info("Session {} joined room {}", sessionId, roomId);
+            log.info("Session {} joined room {}", sessionId, roomId);
         }
     }
 
@@ -159,7 +155,7 @@ public class SessionService {
             session.setLastSeenAt(LocalDateTime.now());
             sessionRepository.save(session);
             
-            logger.info("Session {} left room", sessionId);
+            log.info("Session {} left room", sessionId);
         }
     }
 
@@ -185,7 +181,7 @@ public class SessionService {
             sessionData.put("createdAt", session.getCreatedAt().toString());
             redisUtil.setSession(sessionId, sessionData);
             
-            logger.info("Updated session {} - nickname: {}, avatar: {}", sessionId, nickname, avatar);
+            log.info("Updated session {} - nickname: {}, avatar: {}", sessionId, nickname, avatar);
             return Optional.of(session);
         }
         return Optional.empty();

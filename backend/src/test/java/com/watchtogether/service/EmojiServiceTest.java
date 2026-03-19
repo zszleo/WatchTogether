@@ -47,8 +47,8 @@ class EmojiServiceTest {
         userEmoji.setId(2L);
         userEmoji.setName("my_emoji");
         userEmoji.setType("image");
-        userEmoji.setUrl("/api/files/abc123/raw");
-        userEmoji.setSessionId("session-123");
+        userEmoji.setUrl("/api/file/abc123/raw");
+        userEmoji.setNickname("testuser");
         userEmoji.setIsDefault(false);
     }
 
@@ -80,37 +80,37 @@ class EmojiServiceTest {
     }
 
     @Test
-    void getUserEmojis_ShouldReturnUserCustomEmojis() {
-        String sessionId = "session-123";
+    void getEmojisByNickname_ShouldReturnUserCustomEmojis() {
+        String nickname = "testuser";
         List<Emoji> userEmojis = Arrays.asList(
-            createEmoji(1L, "custom1", "image", null, false),
-            createEmoji(2L, "custom2", "image", null, false)
+            createEmojiWithNickname(1L, "custom1", "image", null, false, nickname),
+            createEmojiWithNickname(2L, "custom2", "image", null, false, nickname)
         );
-        when(emojiRepository.findBySessionIdOrderByCreatedAtDesc(sessionId)).thenReturn(userEmojis);
+        when(emojiRepository.findByNicknameOrderByCreatedAtDesc(nickname)).thenReturn(userEmojis);
 
-        List<Emoji> result = emojiService.getUserEmojis(sessionId);
+        List<Emoji> result = emojiService.getEmojisByNickname(nickname);
 
         assertEquals(2, result.size());
         assertFalse(result.get(0).getIsDefault());
-        verify(emojiRepository).findBySessionIdOrderByCreatedAtDesc(sessionId);
+        verify(emojiRepository).findByNicknameOrderByCreatedAtDesc(nickname);
     }
 
     @Test
-    void getUserEmojis_WithNoCustomEmojis_ShouldReturnEmptyList() {
-        String sessionId = "session-123";
-        when(emojiRepository.findBySessionIdOrderByCreatedAtDesc(sessionId)).thenReturn(List.of());
+    void getEmojisByNickname_WithNoCustomEmojis_ShouldReturnEmptyList() {
+        String nickname = "testuser";
+        when(emojiRepository.findByNicknameOrderByCreatedAtDesc(nickname)).thenReturn(List.of());
 
-        List<Emoji> result = emojiService.getUserEmojis(sessionId);
+        List<Emoji> result = emojiService.getEmojisByNickname(nickname);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
-    void addUserEmoji_WithValidData_ShouldSaveAndReturn() {
-        String sessionId = "session-123";
+    void addEmojiByNickname_WithValidData_ShouldSaveAndReturn() {
+        String nickname = "testuser";
         String name = "my_emoji";
         String type = "image";
-        String url = "/api/files/abc123/raw";
+        String url = "/api/file/abc123/raw";
 
         when(emojiRepository.save(any(Emoji.class))).thenAnswer(invocation -> {
             Emoji e = invocation.getArgument(0);
@@ -118,13 +118,13 @@ class EmojiServiceTest {
             return e;
         });
 
-        Emoji result = emojiService.addUserEmoji(sessionId, name, type, url);
+        Emoji result = emojiService.addEmojiByNickname(nickname, name, type, url);
 
         assertNotNull(result);
         assertEquals(name, result.getName());
         assertEquals(type, result.getType());
         assertEquals(url, result.getUrl());
-        assertEquals(sessionId, result.getSessionId());
+        assertEquals(nickname, result.getNickname());
         assertFalse(result.getIsDefault());
 
         verify(emojiRepository).save(emojiCaptor.capture());
@@ -134,15 +134,15 @@ class EmojiServiceTest {
     }
 
     @Test
-    void addUserEmoji_WithUnicodeType_ShouldSaveSuccessfully() {
-        String sessionId = "session-123";
+    void addEmojiByNickname_WithUnicodeType_ShouldSaveSuccessfully() {
+        String nickname = "testuser";
         when(emojiRepository.save(any(Emoji.class))).thenAnswer(inv -> {
             Emoji e = inv.getArgument(0);
             e.setId(1L);
             return e;
         });
 
-        Emoji result = emojiService.addUserEmoji(sessionId, "laugh", "unicode", "😂");
+        Emoji result = emojiService.addEmojiByNickname(nickname, "laugh", "unicode", "😂");
 
         assertNotNull(result);
         assertEquals("unicode", result.getType());
@@ -150,37 +150,37 @@ class EmojiServiceTest {
     }
 
     @Test
-    void deleteUserEmoji_WithExistingEmoji_ShouldDeleteSuccessfully() {
+    void deleteEmojiByNickname_WithExistingEmoji_ShouldDeleteSuccessfully() {
         Long emojiId = 1L;
-        String sessionId = "session-123";
-        when(emojiRepository.findByIdAndSessionId(emojiId, sessionId)).thenReturn(Optional.of(userEmoji));
+        String nickname = "testuser";
+        when(emojiRepository.findByIdAndNickname(emojiId, nickname)).thenReturn(Optional.of(userEmoji));
 
-        boolean result = emojiService.deleteUserEmoji(emojiId, sessionId);
+        boolean result = emojiService.deleteEmojiByNickname(emojiId, nickname);
 
         assertTrue(result);
         verify(emojiRepository).delete(userEmoji);
     }
 
     @Test
-    void deleteUserEmoji_WithNonExistentEmoji_ShouldReturnFalse() {
+    void deleteEmojiByNickname_WithNonExistentEmoji_ShouldReturnFalse() {
         Long emojiId = 999L;
-        String sessionId = "session-123";
-        when(emojiRepository.findByIdAndSessionId(emojiId, sessionId)).thenReturn(Optional.empty());
+        String nickname = "testuser";
+        when(emojiRepository.findByIdAndNickname(emojiId, nickname)).thenReturn(Optional.empty());
 
-        boolean result = emojiService.deleteUserEmoji(emojiId, sessionId);
+        boolean result = emojiService.deleteEmojiByNickname(emojiId, nickname);
 
         assertFalse(result);
         verify(emojiRepository, never()).delete(any());
     }
 
     @Test
-    void deleteUserEmoji_WithWrongSessionId_ShouldReturnFalse() {
+    void deleteEmojiByNickname_WithWrongNickname_ShouldReturnFalse() {
         Long emojiId = 1L;
-        String sessionId = "session-123";
-        String wrongSessionId = "session-456";
-        when(emojiRepository.findByIdAndSessionId(emojiId, wrongSessionId)).thenReturn(Optional.empty());
+        String nickname = "testuser";
+        String wrongNickname = "wronguser";
+        when(emojiRepository.findByIdAndNickname(emojiId, wrongNickname)).thenReturn(Optional.empty());
 
-        boolean result = emojiService.deleteUserEmoji(emojiId, wrongSessionId);
+        boolean result = emojiService.deleteEmojiByNickname(emojiId, wrongNickname);
 
         assertFalse(result);
         verify(emojiRepository, never()).delete(any());
@@ -215,9 +215,12 @@ class EmojiServiceTest {
         emoji.setType(type);
         emoji.setUnicode(unicode);
         emoji.setIsDefault(isDefault);
-        if (!isDefault) {
-            emoji.setSessionId("session-123");
-        }
+        return emoji;
+    }
+
+    private Emoji createEmojiWithNickname(Long id, String name, String type, String unicode, boolean isDefault, String nickname) {
+        Emoji emoji = createEmoji(id, name, type, unicode, isDefault);
+        emoji.setNickname(nickname);
         return emoji;
     }
 }

@@ -4,7 +4,6 @@ import com.watchtogether.dto.resp.ApiResp;
 import com.watchtogether.dto.req.AddUserEmojiReq;
 import com.watchtogether.model.Emoji;
 import com.watchtogether.service.EmojiService;
-import com.watchtogether.service.SessionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +15,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -28,9 +25,6 @@ class EmojiControllerTest {
 
     @Mock
     private EmojiService emojiService;
-
-    @Mock
-    private SessionService sessionService;
 
     @InjectMocks
     private EmojiController emojiController;
@@ -51,8 +45,8 @@ class EmojiControllerTest {
         userEmoji.setId(2L);
         userEmoji.setName("custom");
         userEmoji.setType("image");
-        userEmoji.setUrl("/api/files/abc123/raw");
-        userEmoji.setSessionId("session-123");
+        userEmoji.setUrl("/api/file/abc123/raw");
+        userEmoji.setNickname("testuser");
         userEmoji.setIsDefault(false);
     }
 
@@ -69,13 +63,13 @@ class EmojiControllerTest {
     }
 
     @Test
-    void getUserEmojis_WithValidSession_ShouldReturnUserEmojis() {
-        String sessionId = "session-123";
+    void getEmojisByNickname_WithValidNickname_ShouldReturnUserEmojis() {
+        String nickname = "testuser";
         List<Emoji> emojis = Arrays.asList(userEmoji);
         
-        when(emojiService.getUserEmojis(sessionId)).thenReturn(emojis);
+        when(emojiService.getEmojisByNickname(nickname)).thenReturn(emojis);
 
-        ResponseEntity<ApiResp<List<Emoji>>> response = emojiController.getUserEmojis(sessionId);
+        ResponseEntity<ApiResp<List<Emoji>>> response = emojiController.getEmojisByNickname(nickname);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -83,28 +77,12 @@ class EmojiControllerTest {
     }
 
     @Test
-    void getUserEmojis_WithInvalidSession_ShouldReturnUnauthorized() {
-        // Note: session validation is handled by @SessionId annotation and parameter resolver
-        // In unit tests without Spring context, invalid session passes through as-is
-        // Integration/WebMvc tests should verify the parameter resolver behavior
-        String sessionId = "invalid-session";
+    void getEmojisByNickname_WithNoEmojis_ShouldReturnEmptyList() {
+        String nickname = "testuser";
         
-        // Controller will call service with the provided sessionId
-        when(emojiService.getUserEmojis(sessionId)).thenReturn(Arrays.asList());
+        when(emojiService.getEmojisByNickname(nickname)).thenReturn(Arrays.asList());
 
-        ResponseEntity<ApiResp<List<Emoji>>> response = emojiController.getUserEmojis(sessionId);
-
-        // In unit test, no validation is applied - this is expected behavior
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-    }
-
-    @Test
-    void getUserEmojis_WithNoEmojis_ShouldReturnEmptyList() {
-        String sessionId = "session-123";
-        
-        when(emojiService.getUserEmojis(sessionId)).thenReturn(Arrays.asList());
-
-        ResponseEntity<ApiResp<List<Emoji>>> response = emojiController.getUserEmojis(sessionId);
+        ResponseEntity<ApiResp<List<Emoji>>> response = emojiController.getEmojisByNickname(nickname);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -112,86 +90,65 @@ class EmojiControllerTest {
     }
 
     @Test
-    void addUserEmoji_WithInvalidSession_ShouldReturnUnauthorized() {
-        // Note: session validation is handled by @SessionId annotation and parameter resolver
-        // In unit tests without Spring context, invalid session passes through as-is
-        // Integration/WebMvc tests should verify the parameter resolver behavior
-        String sessionId = "invalid-session";
+    void addEmojiByNickname_WithValidRequest_ShouldReturnCreated() {
+        String nickname = "testuser";
         AddUserEmojiReq request = new AddUserEmojiReq();
         request.setName("my_emoji");
         request.setType("image");
 
-        // Controller will call service with the provided sessionId
-        when(emojiService.addUserEmoji(eq(sessionId), eq("my_emoji"), eq("image"), any()))
+        when(emojiService.addEmojiByNickname(eq(nickname), eq("my_emoji"), eq("image"), any()))
             .thenReturn(userEmoji);
 
-        ResponseEntity<ApiResp<Emoji>> response = emojiController.addUserEmoji(sessionId, request);
+        ResponseEntity<ApiResp<Emoji>> response = emojiController.addEmojiByNickname(nickname, request);
 
-        // In unit test, no validation is applied - this is expected behavior
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
     }
 
     @Test
-    void addUserEmoji_WithMissingName_ShouldReturnBadRequest() {
-        String sessionId = "session-123";
+    void addEmojiByNickname_WithMissingName_ShouldReturnBadRequest() {
+        String nickname = "testuser";
         AddUserEmojiReq request = new AddUserEmojiReq();
         request.setType("image");
 
-        ResponseEntity<ApiResp<Emoji>> response = emojiController.addUserEmoji(sessionId, request);
+        ResponseEntity<ApiResp<Emoji>> response = emojiController.addEmojiByNickname(nickname, request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    void addUserEmoji_WithMissingType_ShouldReturnBadRequest() {
-        String sessionId = "session-123";
+    void addEmojiByNickname_WithMissingType_ShouldReturnBadRequest() {
+        String nickname = "testuser";
         AddUserEmojiReq request = new AddUserEmojiReq();
         request.setName("my_emoji");
 
-        ResponseEntity<ApiResp<Emoji>> response = emojiController.addUserEmoji(sessionId, request);
+        ResponseEntity<ApiResp<Emoji>> response = emojiController.addEmojiByNickname(nickname, request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    void deleteUserEmoji_WithValidSessionAndOwnEmoji_ShouldDelete() {
-        String sessionId = "session-123";
+    void deleteEmojiByNickname_WithValidNicknameAndOwnEmoji_ShouldDelete() {
+        String nickname = "testuser";
         Long emojiId = 2L;
 
-        when(emojiService.deleteUserEmoji(emojiId, sessionId)).thenReturn(true);
+        when(emojiService.deleteEmojiByNickname(emojiId, nickname)).thenReturn(true);
 
-        ResponseEntity<ApiResp<Void>> response = emojiController.deleteUserEmoji(emojiId, sessionId);
+        ResponseEntity<ApiResp<Void>> response = emojiController.deleteEmojiByNickname(nickname, emojiId);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
     }
 
     @Test
-    void deleteUserEmoji_WithNonExistentEmoji_ShouldReturnNotFound() {
-        String sessionId = "session-123";
+    void deleteEmojiByNickname_WithNonExistentEmoji_ShouldReturnNotFound() {
+        String nickname = "testuser";
         Long emojiId = 999L;
 
-        when(emojiService.deleteUserEmoji(emojiId, sessionId)).thenReturn(false);
+        when(emojiService.deleteEmojiByNickname(emojiId, nickname)).thenReturn(false);
 
-        ResponseEntity<ApiResp<Void>> response = emojiController.deleteUserEmoji(emojiId, sessionId);
+        ResponseEntity<ApiResp<Void>> response = emojiController.deleteEmojiByNickname(nickname, emojiId);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void deleteUserEmoji_WithInvalidSession_ShouldReturnUnauthorized() {
-        // Note: session validation is handled by @SessionId annotation and parameter resolver
-        // In unit tests without Spring context, invalid session passes through as-is
-        // Integration/WebMvc tests should verify the parameter resolver behavior
-        String sessionId = "invalid-session";
-        Long emojiId = 2L;
-
-        // Controller will call service with the provided sessionId
-        when(emojiService.deleteUserEmoji(emojiId, sessionId)).thenReturn(true);
-
-        ResponseEntity<ApiResp<Void>> response = emojiController.deleteUserEmoji(emojiId, sessionId);
-
-        // In unit test, no validation is applied - this is expected behavior
-        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

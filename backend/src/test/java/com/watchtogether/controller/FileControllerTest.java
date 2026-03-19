@@ -57,14 +57,14 @@ class FileControllerTest {
         mockFileUploadResp = new FileUploadResp();
         mockFileUploadResp.setFileId("550e8400-e29b-41d4-a716-446655440000");
         mockFileUploadResp.setFilename("test-video.mp4");
-        mockFileUploadResp.setUrl("/api/files/550e8400-e29b-41d4-a716-446655440000");
+        mockFileUploadResp.setUrl("/api/file/550e8400-e29b-41d4-a716-446655440000");
         mockFileUploadResp.setSize(1024L);
         mockFileUploadResp.setType("video");
 
         // Mock file info response
         mockFileInfoResp = new FileInfoResp();
         mockFileInfoResp.setFileId("550e8400-e29b-41d4-a716-446655440000");
-        mockFileInfoResp.setPath("/api/files/550e8400-e29b-41d4-a716-446655440000");
+        mockFileInfoResp.setPath("/api/file/550e8400-e29b-41d4-a716-446655440000");
         mockFileInfoResp.setSize(1024L);
         mockFileInfoResp.setType("video");
     }
@@ -74,10 +74,10 @@ class FileControllerTest {
         // Arrange
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), anyString()))
-                .thenReturn("/api/files/550e8400-e29b-41d4-a716-446655440000");
+                .thenReturn("/api/file/550e8400-e29b-41d4-a716-446655440000");
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(mockFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -105,7 +105,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(emptyFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -133,7 +133,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(largeFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -159,7 +159,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(invalidFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -185,7 +185,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(nullNameFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -211,7 +211,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(dotEndingFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -236,10 +236,10 @@ class FileControllerTest {
 
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), anyString()))
-                .thenReturn("/api/files/550e8400-e29b-41d4-a716-446655440000");
+                .thenReturn("/api/file/550e8400-e29b-41d4-a716-446655440000");
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(upperCaseFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -263,10 +263,10 @@ class FileControllerTest {
 
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), anyString()))
-                .thenReturn("/api/files/550e8400-e29b-41d4-a716-446655440000");
+                .thenReturn("/api/file/550e8400-e29b-41d4-a716-446655440000");
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(multiDotFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -291,10 +291,10 @@ class FileControllerTest {
 
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), anyString()))
-                .thenReturn("/api/files/550e8400-e29b-41d4-a716-446655440000");
+                .thenReturn("/api/file/550e8400-e29b-41d4-a716-446655440000");
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(mixedCaseFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -314,7 +314,7 @@ class FileControllerTest {
                 .thenThrow(new java.io.IOException("Disk full"));
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(mockFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -332,10 +332,10 @@ class FileControllerTest {
         // Arrange
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), anyString()))
-                .thenReturn("/api/files/550e8400-e29b-41d4-a716-446655440000");
+                .thenReturn("/api/file/550e8400-e29b-41d4-a716-446655440000");
 
         // Act & Assert - don't provide type parameter
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(mockFile)
                         .header("X-Session-Id", validSessionId)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -351,7 +351,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(mockFile)
                         .param("type", "video")
                         .header("X-Session-Id", validSessionId)
@@ -372,12 +372,12 @@ class FileControllerTest {
                 .thenReturn(mockFileInfoResp);
 
         // Act & Assert
-        mockMvc.perform(get("/api/files/550e8400-e29b-41d4-a716-446655440000")
+        mockMvc.perform(get("/api/file/550e8400-e29b-41d4-a716-446655440000")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.fileId", is("550e8400-e29b-41d4-a716-446655440000")))
-                .andExpect(jsonPath("$.data.path", is("/api/files/550e8400-e29b-41d4-a716-446655440000")))
+                .andExpect(jsonPath("$.data.path", is("/api/file/550e8400-e29b-41d4-a716-446655440000")))
                 .andExpect(jsonPath("$.data.type", is("video")));
 
         verify(sessionService).validateSession(validSessionId);
@@ -392,7 +392,7 @@ class FileControllerTest {
                 .thenReturn(null);
 
         // Act & Assert
-        mockMvc.perform(get("/api/files/non-existent-file")
+        mockMvc.perform(get("/api/file/non-existent-file")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -408,7 +408,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(get("/api/files/550e8400-e29b-41d4-a716-446655440000")
+        mockMvc.perform(get("/api/file/550e8400-e29b-41d4-a716-446655440000")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -426,7 +426,7 @@ class FileControllerTest {
                 .thenReturn(true);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/files/550e8400-e29b-41d4-a716-446655440000")
+        mockMvc.perform(delete("/api/file/550e8400-e29b-41d4-a716-446655440000")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -444,7 +444,7 @@ class FileControllerTest {
                 .thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/files/non-existent-file")
+        mockMvc.perform(delete("/api/file/non-existent-file")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -463,7 +463,7 @@ class FileControllerTest {
                 .thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/files/550e8400-e29b-41d4-a716-446655440000")
+        mockMvc.perform(delete("/api/file/550e8400-e29b-41d4-a716-446655440000")
                         .header("X-Session-Id", otherSessionId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -479,7 +479,7 @@ class FileControllerTest {
         when(sessionService.validateSession(validSessionId)).thenReturn(false);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/files/550e8400-e29b-41d4-a716-446655440000")
+        mockMvc.perform(delete("/api/file/550e8400-e29b-41d4-a716-446655440000")
                         .header("X-Session-Id", validSessionId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)))
@@ -501,10 +501,10 @@ class FileControllerTest {
 
         when(sessionService.validateSession(validSessionId)).thenReturn(true);
         when(fileService.saveFile(any(), anyString(), eq("emoji")))
-                .thenReturn("/api/files/emoji-123");
+                .thenReturn("/api/file/emoji-123");
 
         // Act & Assert
-        mockMvc.perform(multipart("/api/files/upload")
+        mockMvc.perform(multipart("/api/file/upload")
                         .file(emojiFile)
                         .param("type", "emoji")
                         .header("X-Session-Id", validSessionId)

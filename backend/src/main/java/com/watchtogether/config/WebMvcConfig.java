@@ -35,6 +35,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(sessionValidationInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/sessions", "/api/health", "/api/sessions/{sessionId}/validate");
+                .excludePathPatterns("/api/session", "/api/health", "/api/session/{sessionId}/validate");
     }
 }
