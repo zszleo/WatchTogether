@@ -77,6 +77,69 @@ docker-compose up -d
 
 启动后端后访问: http://localhost:18080/swagger-ui.html
 
+## API 代码生成
+
+项目提供了一个自动化工具，可以根据后端 OpenAPI 文档自动生成前端 API 调用代码。
+
+### 生成代码
+
+**方式一：在前端项目中使用（推荐）**
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+**方式二：单独使用工具**
+
+```bash
+cd frontend/scripts/openapi-generator
+npm install
+npm run generate
+```
+
+### 生成的文件
+
+```
+frontend/src/
+├── services/
+│   ├── api.js                 # API 调用函数
+│   ├── req.js                 # 请求参数对象
+│   └── resp.js                # 响应参数对象
+└── utils/
+    └── request.js             # 通用请求方法（首次运行时创建）
+```
+
+### 使用示例
+
+```javascript
+import { SessionsApi, RoomsApi } from '@/services/api';
+
+// 获取会话
+const session = await SessionsApi.getSession('sess_abc123');
+
+// 创建房间
+const room = await RoomsApi.createRoom(data, { headers: { 'X-Session-Id': sessionId } });
+
+// 带查询参数
+const messages = await RoomsApi.getChatMessages(roomId, { page: 0, size: 50 });
+```
+
+### 自定义配置
+
+```bash
+# 指定 OpenAPI 文档 URL
+node index.js --openapi-url http://localhost:18080/api-docs
+
+# 只生成指定 tag 的接口
+node index.js --tags 会话管理,房间管理
+
+# 启用参数过滤
+node index.js --filter-unknown-params
+```
+
+详细文档请查看 [openapi-generator README](./frontend/scripts/openapi-generator/README.md)
+
 ## 测试
 
 ```bash

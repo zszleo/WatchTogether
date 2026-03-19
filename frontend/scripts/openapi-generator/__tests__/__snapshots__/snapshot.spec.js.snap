@@ -1,0 +1,1636 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`快照测试 - 生成结果稳定性 > api.js 快照 > 应该包含正确的 API 分组结构 1`] = `
+[
+  "export const SessionsApi = {",
+  "export const RoomsApi = {",
+  "export const FilesApi = {",
+  "export const EmojisApi = {",
+  "export const HealthsApi = {",
+]
+`;
+
+exports[`快照测试 - 生成结果稳定性 > api.js 快照 > 应该包含正确的函数签名 1`] = `
+[
+  "  updateProfile: async (sessionId, data, options = {}) => {",
+  "  createSession: async (data, options = {}) => {",
+  "  leaveRoom: async (sessionId, historyId, options = {}) => {",
+  "  joinRoom: async (sessionId, roomId, options = {}) => {",
+  "  getSession: async (sessionId, options = {}) => {",
+  "  deleteSession: async (sessionId, options = {}) => {",
+  "  validateSession: async (sessionId, options = {}) => {",
+  "  getHistory: async (sessionId, queryParams, options = {}) => {",
+  "  getPublicRooms: async (options = {}) => {",
+  "  createRoom: async (data, options = {}) => {",
+  "  getRoom: async (roomId, queryParams, options = {}) => {",
+  "  deleteRoom: async (roomId, data, options = {}) => {",
+  "  getChatMessages: async (roomId, queryParams, options = {}) => {",
+  "  getInviteLink: async (roomId, queryParams, options = {}) => {",
+  "  getRoomByCode: async (roomCode, queryParams, options = {}) => {",
+  "  uploadFile: async (queryParams, data, options = {}) => {",
+  "  getFileInfo: async (fileId, queryParams, options = {}) => {",
+  "  deleteFile: async (fileId, data, options = {}) => {",
+  "  getUserEmojis: async (queryParams, options = {}) => {",
+  "  addUserEmoji: async (data, options = {}) => {",
+  "  getDefaultEmojis: async (options = {}) => {",
+  "  deleteUserEmoji: async (emojiId, data, options = {}) => {",
+  "  healthCheck: async (options = {}) => {",
+  "  simpleHealth: async (options = {}) => {",
+]
+`;
+
+exports[`快照测试 - 生成结果稳定性 > api.js 快照 > 生成的 api.js 结构应该保持稳定 1`] = `
+"/**
+ * API 调用函数
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+import { request } from '../utils/request';
+
+/**
+ * SessionsApi API
+ */
+export const SessionsApi = {
+  /**
+ * 更新用户资料
+ * 更新用户的昵称和头像
+ * @param {string} sessionId - 会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  updateProfile: async (sessionId, data, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/profile\`;
+    return request(path, { method: 'PUT', data, ...options });
+  },
+  /**
+ * 创建会话
+ * 创建一个新的用户会话，返回会话ID和用户信息
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createSession: async (data, options = {}) => {
+    const path = \`/api/sessions\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 离开房间历史记录
+ * 记录用户离开房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} historyId - 历史记录ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  leaveRoom: async (sessionId, historyId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/\${historyId}/leave\`;
+    return request(path, { method: 'POST', ...options });
+  },
+  /**
+ * 加入房间历史记录
+ * 记录用户加入房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  joinRoom: async (sessionId, roomId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/join/\${roomId}\`;
+    return request(path, { method: 'POST', ...options });
+  },
+  /**
+ * 获取会话信息
+ * 根据会话ID获取用户的会话详细信息
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 删除会话
+ * 删除指定会话ID的用户会话
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'DELETE', ...options });
+  },
+  /**
+ * 验证会话
+ * 验证会话ID是否有效
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  validateSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/validate\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 获取用户历史记录
+ * 获取用户的房间加入历史记录
+ * @param {string} sessionId - 会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getHistory: async (sessionId, queryParams, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "limit": {
+    "type": "integer",
+    "description": "返回记录数量限制",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * RoomsApi API
+ */
+export const RoomsApi = {
+  /**
+ * 获取公开房间列表
+ * 获取所有公开可见的房间列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getPublicRooms: async (options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 创建房间
+ * 创建一个新的观看房间，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createRoom: async (data, options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 获取房间详情
+ * 根据房间ID获取房间详细信息，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoom: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除房间
+ * 删除指定房间，需要房间所有者权限
+ * @param {integer} roomId - 房间ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteRoom: async (roomId, data, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+  /**
+ * 获取聊天消息
+ * 获取房间的聊天消息历史，支持分页
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getChatMessages: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/messages\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "page": {
+    "type": "integer",
+    "description": "页码（从0开始）",
+    "required": false,
+    "in": "query"
+  },
+  "size": {
+    "type": "integer",
+    "description": "每页大小",
+    "required": false,
+    "in": "query"
+  },
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取房间邀请链接
+ * 获取房间的邀请链接，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getInviteLink: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/invite\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 通过房间码获取房间详情
+ * 根据房间邀请码获取房间详细信息，私有房间需要有效的会话ID
+ * @param {string} roomCode - 房间邀请码
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoomByCode: async (roomCode, queryParams, options = {}) => {
+    const path = \`/api/rooms/code/\${roomCode}\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * FilesApi API
+ */
+export const FilesApi = {
+  /**
+ * 上传文件
+ * 上传视频或其他文件，支持的文件类型：.mp4, .webm, .mkv, .mov, .avi，最大100MB
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  uploadFile: async (queryParams, data, options = {}) => {
+    const path = \`/api/files/upload\`;
+    return request(path, { method: 'POST', params: queryParams, data, paramDefinitions: {
+  "type": {
+    "type": "string",
+    "description": "文件类型（video/image等）",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取文件信息
+ * 根据文件ID获取文件详细信息
+ * @param {string} fileId - 文件ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getFileInfo: async (fileId, queryParams, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除文件
+ * 根据文件ID删除文件，需要文件所有者权限
+ * @param {string} fileId - 文件ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteFile: async (fileId, data, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+};
+
+/**
+ * EmojisApi API
+ */
+export const EmojisApi = {
+  /**
+ * 获取用户表情
+ * 获取用户自定义的表情列表，需要有效的会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getUserEmojis: async (queryParams, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 添加用户表情
+ * 添加用户自定义表情，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  addUserEmoji: async (data, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 获取默认表情
+ * 获取系统默认提供的表情列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getDefaultEmojis: async (options = {}) => {
+    const path = \`/api/emojis/default\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 删除用户表情
+ * 删除用户自定义表情，需要有效的会话ID
+ * @param {integer} emojiId - 表情ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteUserEmoji: async (emojiId, data, options = {}) => {
+    const path = \`/api/emojis/user/\${emojiId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+};
+
+/**
+ * HealthsApi API
+ */
+export const HealthsApi = {
+  /**
+ * 系统健康检查
+ * 检查系统及依赖服务（Redis）的健康状态
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  healthCheck: async (options = {}) => {
+    const path = \`/api/health\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 简单健康检查
+ * 返回简单的系统健康状态，不包含依赖服务检查
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  simpleHealth: async (options = {}) => {
+    const path = \`/api/health/simple\`;
+    return request(path, { method: 'GET', ...options });
+  },
+};
+"
+`;
+
+exports[`快照测试 - 生成结果稳定性 > req.js 快照 > 应该包含正确的请求参数类型定义 1`] = `
+[
+  "@typedef {Object} updateProfileRequest",
+  "@typedef {Object} leaveRoomRequest",
+  "@typedef {Object} joinRoomRequest",
+  "@typedef {Object} uploadFileRequest",
+  "@typedef {Object} getUserEmojisRequest",
+  "@typedef {Object} getSessionRequest",
+  "@typedef {Object} deleteSessionRequest",
+  "@typedef {Object} validateSessionRequest",
+  "@typedef {Object} getHistoryRequest",
+  "@typedef {Object} getRoomRequest",
+  "@typedef {Object} deleteRoomRequest",
+  "@typedef {Object} getChatMessagesRequest",
+  "@typedef {Object} getInviteLinkRequest",
+  "@typedef {Object} getRoomByCodeRequest",
+  "@typedef {Object} getFileInfoRequest",
+  "@typedef {Object} deleteFileRequest",
+  "@typedef {Object} deleteUserEmojiRequest",
+]
+`;
+
+exports[`快照测试 - 生成结果稳定性 > req.js 快照 > 生成的 req.js 结构应该保持稳定 1`] = `
+"/**
+ * 请求参数对象
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+/**
+ * 更新用户资料 请求参数
+ * @typedef {Object} updateProfileRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 离开房间历史记录 请求参数
+ * @typedef {Object} leaveRoomRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} historyId - 必填 - 历史记录ID
+ */
+/**
+ * 加入房间历史记录 请求参数
+ * @typedef {Object} joinRoomRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} roomId - 必填 - 房间ID
+ */
+/**
+ * 上传文件 请求参数
+ * @typedef {Object} uploadFileRequest
+ * @property {string} type - 可选 - 文件类型（video/image等）
+ */
+/**
+ * 获取用户表情 请求参数
+ * @typedef {Object} getUserEmojisRequest
+ * @property {string} sessionId - 必填 - 用户会话ID
+ */
+/**
+ * 获取会话信息 请求参数
+ * @typedef {Object} getSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 删除会话 请求参数
+ * @typedef {Object} deleteSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 验证会话 请求参数
+ * @typedef {Object} validateSessionRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ */
+/**
+ * 获取用户历史记录 请求参数
+ * @typedef {Object} getHistoryRequest
+ * @property {string} sessionId - 必填 - 会话ID
+ * @property {integer} limit - 可选 - 返回记录数量限制
+ */
+/**
+ * 获取房间详情 请求参数
+ * @typedef {Object} getRoomRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 删除房间 请求参数
+ * @typedef {Object} deleteRoomRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ */
+/**
+ * 获取聊天消息 请求参数
+ * @typedef {Object} getChatMessagesRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {integer} page - 可选 - 页码（从0开始）
+ * @property {integer} size - 可选 - 每页大小
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 获取房间邀请链接 请求参数
+ * @typedef {Object} getInviteLinkRequest
+ * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 通过房间码获取房间详情 请求参数
+ * @typedef {Object} getRoomByCodeRequest
+ * @property {string} roomCode - 必填 - 房间邀请码
+ * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
+ */
+/**
+ * 获取文件信息 请求参数
+ * @typedef {Object} getFileInfoRequest
+ * @property {string} fileId - 必填 - 文件ID
+ * @property {string} sessionId - 必填 - 用户会话ID
+ */
+/**
+ * 删除文件 请求参数
+ * @typedef {Object} deleteFileRequest
+ * @property {string} fileId - 必填 - 文件ID
+ */
+/**
+ * 删除用户表情 请求参数
+ * @typedef {Object} deleteUserEmojiRequest
+ * @property {integer} emojiId - 必填 - 表情ID
+ */
+"
+`;
+
+exports[`快照测试 - 生成结果稳定性 > resp.js 快照 > 应该包含正确的响应参数类型定义 1`] = `
+[
+  "@typedef {Object} updateProfileResponse",
+  "@typedef {Object} createSessionResponse",
+  "@typedef {Object} leaveRoomResponse",
+  "@typedef {Object} joinRoomResponse",
+  "@typedef {Object} getPublicRoomsResponse",
+  "@typedef {Object} createRoomResponse",
+  "@typedef {Object} uploadFileResponse",
+  "@typedef {Object} getUserEmojisResponse",
+  "@typedef {Object} addUserEmojiResponse",
+  "@typedef {Object} getSessionResponse",
+  "@typedef {Object} deleteSessionResponse",
+  "@typedef {Object} validateSessionResponse",
+  "@typedef {Object} getHistoryResponse",
+  "@typedef {Object} getRoomResponse",
+  "@typedef {Object} deleteRoomResponse",
+  "@typedef {Object} getChatMessagesResponse",
+  "@typedef {Object} getInviteLinkResponse",
+  "@typedef {Object} getRoomByCodeResponse",
+  "@typedef {Object} healthCheckResponse",
+  "@typedef {Object} simpleHealthResponse",
+  "@typedef {Object} getFileInfoResponse",
+  "@typedef {Object} deleteFileResponse",
+  "@typedef {Object} getDefaultEmojisResponse",
+  "@typedef {Object} deleteUserEmojiResponse",
+]
+`;
+
+exports[`快照测试 - 生成结果稳定性 > resp.js 快照 > 生成的 resp.js 结构应该保持稳定 1`] = `
+"/**
+ * 响应参数对象
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+/**
+ * 更新用户资料 响应数据
+ * @typedef {Object} updateProfileResponse
+ * @property {any} data - OK
+ */
+/**
+ * 创建会话 响应数据
+ * @typedef {Object} createSessionResponse
+ * @property {any} data - OK
+ */
+/**
+ * 离开房间历史记录 响应数据
+ * @typedef {Object} leaveRoomResponse
+ * @property {any} data - OK
+ */
+/**
+ * 加入房间历史记录 响应数据
+ * @typedef {Object} joinRoomResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取公开房间列表 响应数据
+ * @typedef {Object} getPublicRoomsResponse
+ * @property {any} data - OK
+ */
+/**
+ * 创建房间 响应数据
+ * @typedef {Object} createRoomResponse
+ * @property {any} data - OK
+ */
+/**
+ * 上传文件 响应数据
+ * @typedef {Object} uploadFileResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取用户表情 响应数据
+ * @typedef {Object} getUserEmojisResponse
+ * @property {any} data - OK
+ */
+/**
+ * 添加用户表情 响应数据
+ * @typedef {Object} addUserEmojiResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取会话信息 响应数据
+ * @typedef {Object} getSessionResponse
+ * @property {any} data - OK
+ */
+/**
+ * 删除会话 响应数据
+ * @typedef {Object} deleteSessionResponse
+ * @property {any} data - OK
+ */
+/**
+ * 验证会话 响应数据
+ * @typedef {Object} validateSessionResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取用户历史记录 响应数据
+ * @typedef {Object} getHistoryResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取房间详情 响应数据
+ * @typedef {Object} getRoomResponse
+ * @property {any} data - OK
+ */
+/**
+ * 删除房间 响应数据
+ * @typedef {Object} deleteRoomResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取聊天消息 响应数据
+ * @typedef {Object} getChatMessagesResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取房间邀请链接 响应数据
+ * @typedef {Object} getInviteLinkResponse
+ * @property {any} data - OK
+ */
+/**
+ * 通过房间码获取房间详情 响应数据
+ * @typedef {Object} getRoomByCodeResponse
+ * @property {any} data - OK
+ */
+/**
+ * 系统健康检查 响应数据
+ * @typedef {Object} healthCheckResponse
+ * @property {any} data - OK
+ */
+/**
+ * 简单健康检查 响应数据
+ * @typedef {Object} simpleHealthResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取文件信息 响应数据
+ * @typedef {Object} getFileInfoResponse
+ * @property {any} data - OK
+ */
+/**
+ * 删除文件 响应数据
+ * @typedef {Object} deleteFileResponse
+ * @property {any} data - OK
+ */
+/**
+ * 获取默认表情 响应数据
+ * @typedef {Object} getDefaultEmojisResponse
+ * @property {any} data - OK
+ */
+/**
+ * 删除用户表情 响应数据
+ * @typedef {Object} deleteUserEmojiResponse
+ * @property {any} data - OK
+ */
+"
+`;
+
+exports[`快照测试 - 生成结果稳定性 > 配置选项快照 > filterUnknownParams 模式下的 api.js 应该保持稳定 1`] = `
+"/**
+ * API 调用函数
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+import { request } from '../utils/request';
+
+/**
+ * SessionsApi API
+ */
+export const SessionsApi = {
+  /**
+ * 更新用户资料
+ * 更新用户的昵称和头像
+ * @param {string} sessionId - 会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  updateProfile: async (sessionId, data, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/profile\`;
+    return request(path, { method: 'PUT', data, ...options });
+  },
+  /**
+ * 创建会话
+ * 创建一个新的用户会话，返回会话ID和用户信息
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createSession: async (data, options = {}) => {
+    const path = \`/api/sessions\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 离开房间历史记录
+ * 记录用户离开房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} historyId - 历史记录ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  leaveRoom: async (sessionId, historyId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/\${historyId}/leave\`;
+    return request(path, { method: 'POST', ...options });
+  },
+  /**
+ * 加入房间历史记录
+ * 记录用户加入房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  joinRoom: async (sessionId, roomId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/join/\${roomId}\`;
+    return request(path, { method: 'POST', ...options });
+  },
+  /**
+ * 获取会话信息
+ * 根据会话ID获取用户的会话详细信息
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 删除会话
+ * 删除指定会话ID的用户会话
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'DELETE', ...options });
+  },
+  /**
+ * 验证会话
+ * 验证会话ID是否有效
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  validateSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/validate\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 获取用户历史记录
+ * 获取用户的房间加入历史记录
+ * @param {string} sessionId - 会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getHistory: async (sessionId, queryParams, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["limit"], paramDefinitions: {
+  "limit": {
+    "type": "integer",
+    "description": "返回记录数量限制",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * RoomsApi API
+ */
+export const RoomsApi = {
+  /**
+ * 获取公开房间列表
+ * 获取所有公开可见的房间列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getPublicRooms: async (options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 创建房间
+ * 创建一个新的观看房间，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createRoom: async (data, options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 获取房间详情
+ * 根据房间ID获取房间详细信息，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoom: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["sessionId"], paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除房间
+ * 删除指定房间，需要房间所有者权限
+ * @param {integer} roomId - 房间ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteRoom: async (roomId, data, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+  /**
+ * 获取聊天消息
+ * 获取房间的聊天消息历史，支持分页
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getChatMessages: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/messages\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["page","size","sessionId"], paramDefinitions: {
+  "page": {
+    "type": "integer",
+    "description": "页码（从0开始）",
+    "required": false,
+    "in": "query"
+  },
+  "size": {
+    "type": "integer",
+    "description": "每页大小",
+    "required": false,
+    "in": "query"
+  },
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取房间邀请链接
+ * 获取房间的邀请链接，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getInviteLink: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/invite\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["sessionId"], paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 通过房间码获取房间详情
+ * 根据房间邀请码获取房间详细信息，私有房间需要有效的会话ID
+ * @param {string} roomCode - 房间邀请码
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoomByCode: async (roomCode, queryParams, options = {}) => {
+    const path = \`/api/rooms/code/\${roomCode}\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["sessionId"], paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * FilesApi API
+ */
+export const FilesApi = {
+  /**
+ * 上传文件
+ * 上传视频或其他文件，支持的文件类型：.mp4, .webm, .mkv, .mov, .avi，最大100MB
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  uploadFile: async (queryParams, data, options = {}) => {
+    const path = \`/api/files/upload\`;
+    return request(path, { method: 'POST', params: queryParams, data, allowedParams: ["type"], paramDefinitions: {
+  "type": {
+    "type": "string",
+    "description": "文件类型（video/image等）",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取文件信息
+ * 根据文件ID获取文件详细信息
+ * @param {string} fileId - 文件ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getFileInfo: async (fileId, queryParams, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["sessionId"], paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除文件
+ * 根据文件ID删除文件，需要文件所有者权限
+ * @param {string} fileId - 文件ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteFile: async (fileId, data, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+};
+
+/**
+ * EmojisApi API
+ */
+export const EmojisApi = {
+  /**
+ * 获取用户表情
+ * 获取用户自定义的表情列表，需要有效的会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getUserEmojis: async (queryParams, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'GET', params: queryParams, allowedParams: ["sessionId"], paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 添加用户表情
+ * 添加用户自定义表情，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  addUserEmoji: async (data, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 获取默认表情
+ * 获取系统默认提供的表情列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getDefaultEmojis: async (options = {}) => {
+    const path = \`/api/emojis/default\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 删除用户表情
+ * 删除用户自定义表情，需要有效的会话ID
+ * @param {integer} emojiId - 表情ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteUserEmoji: async (emojiId, data, options = {}) => {
+    const path = \`/api/emojis/user/\${emojiId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+};
+
+/**
+ * HealthsApi API
+ */
+export const HealthsApi = {
+  /**
+ * 系统健康检查
+ * 检查系统及依赖服务（Redis）的健康状态
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  healthCheck: async (options = {}) => {
+    const path = \`/api/health\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 简单健康检查
+ * 返回简单的系统健康状态，不包含依赖服务检查
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  simpleHealth: async (options = {}) => {
+    const path = \`/api/health/simple\`;
+    return request(path, { method: 'GET', ...options });
+  },
+};
+"
+`;
+
+exports[`快照测试 - 生成结果稳定性 > 配置选项快照 > strictMode 模式下的 api.js 应该保持稳定 1`] = `
+"/**
+ * API 调用函数
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+import { request } from '../utils/request';
+
+/**
+ * SessionsApi API
+ */
+export const SessionsApi = {
+  /**
+ * 更新用户资料
+ * 更新用户的昵称和头像
+ * @param {string} sessionId - 会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  updateProfile: async (sessionId, data, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/profile\`;
+    return request(path, { method: 'PUT', data, strictMode: true, ...options });
+  },
+  /**
+ * 创建会话
+ * 创建一个新的用户会话，返回会话ID和用户信息
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createSession: async (data, options = {}) => {
+    const path = \`/api/sessions\`;
+    return request(path, { method: 'POST', data, strictMode: true, ...options });
+  },
+  /**
+ * 离开房间历史记录
+ * 记录用户离开房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} historyId - 历史记录ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  leaveRoom: async (sessionId, historyId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/\${historyId}/leave\`;
+    return request(path, { method: 'POST', strictMode: true, ...options });
+  },
+  /**
+ * 加入房间历史记录
+ * 记录用户加入房间的历史
+ * @param {string} sessionId - 会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  joinRoom: async (sessionId, roomId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history/join/\${roomId}\`;
+    return request(path, { method: 'POST', strictMode: true, ...options });
+  },
+  /**
+ * 获取会话信息
+ * 根据会话ID获取用户的会话详细信息
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+  /**
+ * 删除会话
+ * 删除指定会话ID的用户会话
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}\`;
+    return request(path, { method: 'DELETE', strictMode: true, ...options });
+  },
+  /**
+ * 验证会话
+ * 验证会话ID是否有效
+ * @param {string} sessionId - 会话ID
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  validateSession: async (sessionId, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/validate\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+  /**
+ * 获取用户历史记录
+ * 获取用户的房间加入历史记录
+ * @param {string} sessionId - 会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getHistory: async (sessionId, queryParams, options = {}) => {
+    const path = \`/api/sessions/\${sessionId}/history\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "limit": {
+    "type": "integer",
+    "description": "返回记录数量限制",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * RoomsApi API
+ */
+export const RoomsApi = {
+  /**
+ * 获取公开房间列表
+ * 获取所有公开可见的房间列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getPublicRooms: async (options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+  /**
+ * 创建房间
+ * 创建一个新的观看房间，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createRoom: async (data, options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'POST', data, strictMode: true, ...options });
+  },
+  /**
+ * 获取房间详情
+ * 根据房间ID获取房间详细信息，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoom: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除房间
+ * 删除指定房间，需要房间所有者权限
+ * @param {integer} roomId - 房间ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteRoom: async (roomId, data, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'DELETE', data, strictMode: true, ...options });
+  },
+  /**
+ * 获取聊天消息
+ * 获取房间的聊天消息历史，支持分页
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getChatMessages: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/messages\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "page": {
+    "type": "integer",
+    "description": "页码（从0开始）",
+    "required": false,
+    "in": "query"
+  },
+  "size": {
+    "type": "integer",
+    "description": "每页大小",
+    "required": false,
+    "in": "query"
+  },
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取房间邀请链接
+ * 获取房间的邀请链接，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getInviteLink: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/invite\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 通过房间码获取房间详情
+ * 根据房间邀请码获取房间详细信息，私有房间需要有效的会话ID
+ * @param {string} roomCode - 房间邀请码
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoomByCode: async (roomCode, queryParams, options = {}) => {
+    const path = \`/api/rooms/code/\${roomCode}\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * FilesApi API
+ */
+export const FilesApi = {
+  /**
+ * 上传文件
+ * 上传视频或其他文件，支持的文件类型：.mp4, .webm, .mkv, .mov, .avi，最大100MB
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  uploadFile: async (queryParams, data, options = {}) => {
+    const path = \`/api/files/upload\`;
+    return request(path, { method: 'POST', params: queryParams, data, strictMode: true, paramDefinitions: {
+  "type": {
+    "type": "string",
+    "description": "文件类型（video/image等）",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取文件信息
+ * 根据文件ID获取文件详细信息
+ * @param {string} fileId - 文件ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getFileInfo: async (fileId, queryParams, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除文件
+ * 根据文件ID删除文件，需要文件所有者权限
+ * @param {string} fileId - 文件ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteFile: async (fileId, data, options = {}) => {
+    const path = \`/api/files/\${fileId}\`;
+    return request(path, { method: 'DELETE', data, strictMode: true, ...options });
+  },
+};
+
+/**
+ * EmojisApi API
+ */
+export const EmojisApi = {
+  /**
+ * 获取用户表情
+ * 获取用户自定义的表情列表，需要有效的会话ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getUserEmojis: async (queryParams, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'GET', params: queryParams, strictMode: true, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 添加用户表情
+ * 添加用户自定义表情，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  addUserEmoji: async (data, options = {}) => {
+    const path = \`/api/emojis/user\`;
+    return request(path, { method: 'POST', data, strictMode: true, ...options });
+  },
+  /**
+ * 获取默认表情
+ * 获取系统默认提供的表情列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getDefaultEmojis: async (options = {}) => {
+    const path = \`/api/emojis/default\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+  /**
+ * 删除用户表情
+ * 删除用户自定义表情，需要有效的会话ID
+ * @param {integer} emojiId - 表情ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteUserEmoji: async (emojiId, data, options = {}) => {
+    const path = \`/api/emojis/user/\${emojiId}\`;
+    return request(path, { method: 'DELETE', data, strictMode: true, ...options });
+  },
+};
+
+/**
+ * HealthsApi API
+ */
+export const HealthsApi = {
+  /**
+ * 系统健康检查
+ * 检查系统及依赖服务（Redis）的健康状态
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  healthCheck: async (options = {}) => {
+    const path = \`/api/health\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+  /**
+ * 简单健康检查
+ * 返回简单的系统健康状态，不包含依赖服务检查
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  simpleHealth: async (options = {}) => {
+    const path = \`/api/health/simple\`;
+    return request(path, { method: 'GET', strictMode: true, ...options });
+  },
+};
+"
+`;
+
+exports[`快照测试 - 生成结果稳定性 > 配置选项快照 > tags 过滤模式下的 api.js 应该保持稳定 1`] = `
+"/**
+ * API 调用函数
+ * 由 OpenAPI 代码生成器自动生成
+ * 生成时间: [TIMESTAMP]
+ */
+
+import { request } from '../utils/request';
+
+/**
+ * RoomsApi API
+ */
+export const RoomsApi = {
+  /**
+ * 获取公开房间列表
+ * 获取所有公开可见的房间列表
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getPublicRooms: async (options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 创建房间
+ * 创建一个新的观看房间，需要有效的会话ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  createRoom: async (data, options = {}) => {
+    const path = \`/api/rooms\`;
+    return request(path, { method: 'POST', data, ...options });
+  },
+  /**
+ * 获取房间详情
+ * 根据房间ID获取房间详细信息，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoom: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 删除房间
+ * 删除指定房间，需要房间所有者权限
+ * @param {integer} roomId - 房间ID
+ * @param {Object} data - 请求体数据
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  deleteRoom: async (roomId, data, options = {}) => {
+    const path = \`/api/rooms/\${roomId}\`;
+    return request(path, { method: 'DELETE', data, ...options });
+  },
+  /**
+ * 获取聊天消息
+ * 获取房间的聊天消息历史，支持分页
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getChatMessages: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/messages\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "page": {
+    "type": "integer",
+    "description": "页码（从0开始）",
+    "required": false,
+    "in": "query"
+  },
+  "size": {
+    "type": "integer",
+    "description": "每页大小",
+    "required": false,
+    "in": "query"
+  },
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 获取房间邀请链接
+ * 获取房间的邀请链接，私有房间需要有效的会话ID
+ * @param {integer} roomId - 房间ID
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getInviteLink: async (roomId, queryParams, options = {}) => {
+    const path = \`/api/rooms/\${roomId}/invite\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+  /**
+ * 通过房间码获取房间详情
+ * 根据房间邀请码获取房间详细信息，私有房间需要有效的会话ID
+ * @param {string} roomCode - 房间邀请码
+ * @param {Object} queryParams - 查询参数
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  getRoomByCode: async (roomCode, queryParams, options = {}) => {
+    const path = \`/api/rooms/code/\${roomCode}\`;
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "sessionId": {
+    "type": "string",
+    "description": "用户会话ID（访问私有房间时必需）",
+    "required": true,
+    "in": "query"
+  }
+}, ...options });
+  },
+};
+
+/**
+ * HealthsApi API
+ */
+export const HealthsApi = {
+  /**
+ * 系统健康检查
+ * 检查系统及依赖服务（Redis）的健康状态
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  healthCheck: async (options = {}) => {
+    const path = \`/api/health\`;
+    return request(path, { method: 'GET', ...options });
+  },
+  /**
+ * 简单健康检查
+ * 返回简单的系统健康状态，不包含依赖服务检查
+ * @param {Object} [options={}] - 请求选项（如headers、timeout等）
+ * @returns {Promise} Promise对象
+ */
+  simpleHealth: async (options = {}) => {
+    const path = \`/api/health/simple\`;
+    return request(path, { method: 'GET', ...options });
+  },
+};
+"
+`;
