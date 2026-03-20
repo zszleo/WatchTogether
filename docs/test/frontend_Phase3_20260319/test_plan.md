@@ -271,10 +271,10 @@ npm install -D @playwright/cli  # E2E 测试
 - [x] 核心组件测试 (VideoPlayer, ChatPanel)
 - [x] 页面组件测试 (所有 Views)
 
-### 阶段 4：集成测试 (1 周)
-- [ ] 组件-Store 集成测试
-- [ ] API 集成测试
-- [ ] Socket 集成测试
+### 阶段 4：集成测试 (1 周) ✓ 已完成
+- [x] 组件-Store 集成测试 (4个测试通过)
+- [x] API 集成测试 (7个测试通过, 2个跳过)
+- [x] Socket 集成测试 (10个测试通过, 含 system:message 功能)
 
 ### 阶段 5：E2E 测试 (1 周)
 - [ ] 配置 Playwright-cli
@@ -325,7 +325,7 @@ npm install -D @playwright/cli  # E2E 测试
 
 ---
 
-**文档版本**: v1.4  
+**文档版本**: v1.5  
 **创建日期**: 2026-03-19  
-**更新日期**: 2026-03-19  
+**更新日期**: 2026-03-20  
 **负责人**: 前端团队

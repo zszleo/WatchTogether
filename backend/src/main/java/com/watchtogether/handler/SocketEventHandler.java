@@ -83,6 +83,17 @@ public class SocketEventHandler {
                 leaveEvent.put("timestamp", System.currentTimeMillis());
                 socketServer.getRoomOperations(roomCode).sendEvent("user-left", leaveEvent);
                 
+                // Send system message for user disconnected
+                String nickname = sessionService.getSession(sessionId)
+                        .map(s -> s.getNickname())
+                        .orElse("Unknown User");
+                Map<String, Object> systemMessage = new HashMap<>();
+                systemMessage.put("type", "user-disconnected");
+                systemMessage.put("content", nickname + " 断开了连接");
+                systemMessage.put("roomId", roomCode);
+                systemMessage.put("timestamp", System.currentTimeMillis());
+                socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
+                
                 // Remove user from room users in Redis
                 if (roomIdStr != null && sessionId != null) {
                     removeUserFromRoom(roomIdStr, sessionId);
@@ -179,15 +190,15 @@ public class SocketEventHandler {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("roomId", roomCode);
-            response.put("roomInfo", Map.of(
-                "id", roomId,
-                "code", room.getCode(),
-                "name", room.getName(),
-                "videoUrl", room.getVideoUrl(),
-                "videoTitle", room.getVideoTitle(),
-                "currentPlaybackTime", room.getCurrentPlaybackTime(),
-                "isPlaying", room.getIsPlaying()
-            ));
+            Map<String, Object> roomInfo = new HashMap<>();
+            roomInfo.put("id", roomId);
+            roomInfo.put("code", room.getCode());
+            roomInfo.put("name", room.getName());
+            roomInfo.put("videoUrl", room.getVideoUrl());
+            roomInfo.put("videoTitle", room.getVideoTitle());
+            roomInfo.put("currentPlaybackTime", room.getCurrentPlaybackTime());
+            roomInfo.put("isPlaying", room.getIsPlaying());
+            response.put("roomInfo", roomInfo);
             ackSender.sendAckData(response);
         }
         
@@ -197,6 +208,17 @@ public class SocketEventHandler {
         joinEvent.put("sessionId", sessionId);
         joinEvent.put("timestamp", System.currentTimeMillis());
         socketServer.getRoomOperations(roomCode).sendEvent("user-joined", joinEvent);
+        
+        // Send system message for user joined
+        String nickname = sessionService.getSession(sessionId)
+                .map(s -> s.getNickname())
+                .orElse("Unknown User");
+        Map<String, Object> systemMessage = new HashMap<>();
+        systemMessage.put("type", "user-joined");
+        systemMessage.put("content", nickname + " 加入了房间");
+        systemMessage.put("roomId", roomCode);
+        systemMessage.put("timestamp", System.currentTimeMillis());
+        socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
         
         // Send room state to the newly joined client only
         sendRoomState(client, room, roomCode);
@@ -231,6 +253,17 @@ public class SocketEventHandler {
             leaveEvent.put("sessionId", sessionId);
             leaveEvent.put("timestamp", System.currentTimeMillis());
             socketServer.getRoomOperations(roomCode).sendEvent("user-left", leaveEvent);
+            
+            // Send system message for user left
+            String nickname = sessionService.getSession(sessionId)
+                    .map(s -> s.getNickname())
+                    .orElse("Unknown User");
+            Map<String, Object> systemMessage = new HashMap<>();
+            systemMessage.put("type", "user-left");
+            systemMessage.put("content", nickname + " 离开了房间");
+            systemMessage.put("roomId", roomCode);
+            systemMessage.put("timestamp", System.currentTimeMillis());
+            socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
             
             // Remove user from room users in Redis
             if (roomIdStr != null && sessionId != null) {
@@ -290,7 +323,12 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            client.getNamespace().getRoomOperations(roomId).sendEvent("video:sync-play", syncEvent, client);
+            // Use socketServer to broadcast to room, excluding sender
+            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+                if (!c.getSessionId().equals(client.getSessionId())) {
+                    c.sendEvent("video:sync-play", syncEvent);
+                }
+            });
         }
         
         if (ackSender.isAckRequested()) {
@@ -321,7 +359,11 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            client.getNamespace().getRoomOperations(roomId).sendEvent("video:sync-pause", syncEvent, client);
+            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+                if (!c.getSessionId().equals(client.getSessionId())) {
+                    c.sendEvent("video:sync-pause", syncEvent);
+                }
+            });
         }
         
         if (ackSender.isAckRequested()) {
@@ -353,7 +395,11 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            client.getNamespace().getRoomOperations(roomId).sendEvent("video:sync-seek", syncEvent, client);
+            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+                if (!c.getSessionId().equals(client.getSessionId())) {
+                    c.sendEvent("video:sync-seek", syncEvent);
+                }
+            });
         }
         
         if (ackSender.isAckRequested()) {
@@ -385,7 +431,11 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            client.getNamespace().getRoomOperations(roomId).sendEvent("video:sync-url-change", syncEvent, client);
+            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+                if (!c.getSessionId().equals(client.getSessionId())) {
+                    c.sendEvent("video:sync-url-change", syncEvent);
+                }
+            });
         }
         
         if (ackSender.isAckRequested()) {
@@ -420,8 +470,16 @@ public class SocketEventHandler {
         }
         
         try {
+            // Find room by code to get roomId
+            Optional<Room> roomOpt = roomService.getRoomByCode(roomId);
+            if (roomOpt.isEmpty()) {
+                sendAckError(ackSender, "Room not found");
+                return;
+            }
+            Room room = roomOpt.get();
+            
             ChatMessage chatMessage = new ChatMessage();
-            chatMessage.setRoomId(Long.parseLong(roomId));
+            chatMessage.setRoomId(room.getId());
             chatMessage.setSessionId(socketId);
             chatMessage.setContent(message);
             chatMessage.setMessageType("text");
@@ -432,14 +490,11 @@ public class SocketEventHandler {
             chatEvent.put("message", message);
             chatEvent.put("sender", sender != null ? sender : "Anonymous");
             chatEvent.put("socketId", socketId);
-            chatEvent.put("timestamp", chatMessage.getCreatedAt());
+            chatEvent.put("timestamp", chatMessage.getCreatedAt() != null ? chatMessage.getCreatedAt().toString() : null);
             
             socketServer.getRoomOperations(roomId).sendEvent("chat:message", chatEvent);
             
             sendAckSuccess(ackSender, new HashMap<>());
-        } catch (NumberFormatException e) {
-            log.warn("Invalid room ID format: {}", roomId);
-            sendAckError(ackSender, "Invalid room ID");
         } catch (Exception e) {
             log.error("Failed to save chat message: {}", e.getMessage());
             sendAckError(ackSender, "Failed to save message");
@@ -504,7 +559,8 @@ public class SocketEventHandler {
         roomState.put("videoTitle", room.getVideoTitle());
         roomState.put("currentPlaybackTime", room.getCurrentPlaybackTime());
         roomState.put("isPlaying", room.getIsPlaying());
-        roomState.put("updatedAt", room.getUpdatedAt());
+        // Convert LocalDateTime to ISO string for JSON serialization
+        roomState.put("updatedAt", room.getUpdatedAt() != null ? room.getUpdatedAt().toString() : null);
         
         // Get online users
         Object usersObj = redisUtil.getRoomUsers(room.getId().toString());

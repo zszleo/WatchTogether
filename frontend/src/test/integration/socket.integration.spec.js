@@ -211,13 +211,14 @@ describe('Socket 集成测试', () => {
         roomStateEvents.push({ ...data, socket: 'socket2' })
       })
       
-      // 两个用户依次加入房间
+      // 两个用户依次加入房间（使用 roomCode 作为 roomId）
       socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
-      await new Promise(resolve => setTimeout(resolve, 500)) // 等待第一个用户加入
+      await new Promise(resolve => setTimeout(resolve, 1500)) // 等待第一个用户加入完成
       socket2.emit('join-room', { roomId: roomCode, sessionId: sessionId2 })
+      await new Promise(resolve => setTimeout(resolve, 1500)) // 等待第二个用户加入完成
       
       // 等待事件处理
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 3000))
       
       console.log(`收集到的事件: user-joined=${userJoinedEvents.length}, room-state=${roomStateEvents.length}`)
       console.log('user-joined 事件详情:', userJoinedEvents)
@@ -286,10 +287,12 @@ describe('Socket 集成测试', () => {
     let roomCode
     let sessionId1
     let sessionId2
+    let nickname1
+    let nickname2
 
     beforeEach(async () => {
       // 创建测试房间和用户
-      const nickname1 = '聊天用户1-' + Date.now()
+      nickname1 = '聊天用户1-' + Date.now()
       const sessionResponse1 = await testApi.post('/api/session', { nickname: nickname1 })
       sessionId1 = sessionResponse1.data.id
       
@@ -307,7 +310,7 @@ describe('Socket 集成测试', () => {
       roomId = createRoomResponse.data.id
       roomCode = createRoomResponse.data.code
       
-      const nickname2 = '聊天用户2-' + Date.now()
+      nickname2 = '聊天用户2-' + Date.now()
       const sessionResponse2 = await testApi.post('/api/session', { nickname: nickname2 })
       sessionId2 = sessionResponse2.data.id
     })
@@ -318,11 +321,11 @@ describe('Socket 集成测试', () => {
       socketHelper2 = createSocketTestHelper()
       socket2 = await socketHelper2.connect()
       
-      // 两个用户都加入房间
-      socket1.emit('join-room', { roomId, sessionId: sessionId1 })
-      socket2.emit('join-room', { roomId, sessionId: sessionId2 })
+      // 两个用户都加入房间（使用 roomCode 作为 roomId）
+      socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
+      socket2.emit('join-room', { roomId: roomCode, sessionId: sessionId2 })
       
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // 第二个用户监听聊天消息事件
       const chatMessagePromise = new Promise((resolve) => {
@@ -346,25 +349,36 @@ describe('Socket 集成测试', () => {
       expect(messageData).toHaveProperty('sender', '用户1')
     }, TEST_TIMEOUT)
 
-    it.skip('应该能接收系统消息', async () => {
+    it('应该能接收系统消息（用户加入）', async () => {
       socketHelper1 = createSocketTestHelper()
       socket1 = await socketHelper1.connect()
+      socketHelper2 = createSocketTestHelper()
+      socket2 = await socketHelper2.connect()
       
-      // 监听系统消息
+      // 第一个用户先加入房间
+      socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // 第一个用户监听系统消息（当第二个用户加入时会收到）
       const systemMessagePromise = new Promise((resolve) => {
         socket1.on('system:message', (data) => {
-          resolve(data)
+          console.log('socket1 收到 system:message:', data)
+          if (data.type === 'user-joined') {
+            resolve(data)
+          }
         })
       })
       
-      // 加入房间（应该触发系统消息）
-      socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
+      // 第二个用户加入房间
+      socket2.emit('join-room', { roomId: roomCode, sessionId: sessionId2 })
       
       // 等待系统消息
       const systemMessageData = await systemMessagePromise
       
-      expect(systemMessageData).toHaveProperty('roomId', roomId)
-      expect(systemMessageData).toHaveProperty('type', 'system')
+      expect(systemMessageData).toHaveProperty('type', 'user-joined')
+      expect(systemMessageData).toHaveProperty('content')
+      expect(systemMessageData.content).toContain('加入了房间')
+      expect(systemMessageData).toHaveProperty('roomId', roomCode)
     }, TEST_TIMEOUT)
   })
 
@@ -405,11 +419,11 @@ describe('Socket 集成测试', () => {
       socketHelper2 = createSocketTestHelper()
       socket2 = await socketHelper2.connect()
       
-      // 两个用户都加入房间
+      // 两个用户都加入房间（使用 roomCode 作为 roomId）
       socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
       socket2.emit('join-room', { roomId: roomCode, sessionId: sessionId2 })
       
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // 第二个用户监听视频同步播放事件
       const videoPlayPromise = new Promise((resolve) => {
@@ -435,11 +449,11 @@ describe('Socket 集成测试', () => {
       socketHelper2 = createSocketTestHelper()
       socket2 = await socketHelper2.connect()
       
-      // 两个用户都加入房间
-      socket1.emit('join-room', { roomId, sessionId: sessionId1 })
-      socket2.emit('join-room', { roomId, sessionId: sessionId2 })
+      // 两个用户都加入房间（使用 roomCode 作为 roomId）
+      socket1.emit('join-room', { roomId: roomCode, sessionId: sessionId1 })
+      socket2.emit('join-room', { roomId: roomCode, sessionId: sessionId2 })
       
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // 第二个用户监听视频同步暂停事件
       const videoPausePromise = new Promise((resolve) => {
