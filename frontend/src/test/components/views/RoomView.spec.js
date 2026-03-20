@@ -65,7 +65,7 @@ describe('RoomView', () => {
     // 设置初始状态
     userStore.sessionId = 'session-123'
     userStore.nickname = '测试用户'
-    roomStore.currentRoom = { id: 'room-123', name: '测试房间' }
+    roomStore.currentRoom = { id: 'room-123', code: 'ABC123', name: '测试房间' }
     chatStore.messages = []
     
     // Mock chatStore.loadHistory to avoid API calls
@@ -233,7 +233,7 @@ describe('RoomView', () => {
       
       // 设置没有 sessionId
       newUserStore.sessionId = null
-      newRoomStore.currentRoom = { id: 'room-456', name: '测试房间' }
+      newRoomStore.currentRoom = { id: 'room-456', code: 'DEF456', name: '测试房间' }
       
       // Mock createSession
       vi.spyOn(newUserStore, 'createSession').mockResolvedValue()
@@ -276,7 +276,7 @@ describe('RoomView', () => {
       await loadButton.trigger('click')
       
       expect(socketService.emitVideoUrlChange).toHaveBeenCalledWith(
-        'room-123',
+        'ABC123',
         'https://example.com/video.mp4'
       )
       // 输入框应该被清空
@@ -303,7 +303,7 @@ describe('RoomView', () => {
       await urlInput.trigger('keyup.enter')
       
       expect(socketService.emitVideoUrlChange).toHaveBeenCalledWith(
-        'room-123',
+        'ABC123',
         'https://example.com/video.mp4'
       )
     })
@@ -333,7 +333,7 @@ describe('RoomView', () => {
       await fileInput.trigger('change')
       
       expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockFile)
-      expect(socketService.emitVideoUrlChange).toHaveBeenCalledWith('room-123', mockUrl)
+      expect(socketService.emitVideoUrlChange).toHaveBeenCalledWith('ABC123', mockUrl)
     })
 
     it('没有选择文件时不应该发送视频变更', async () => {

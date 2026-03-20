@@ -149,6 +149,68 @@ describe('HomeView', () => {
     })
   })
 
+  describe('加载状态测试', () => {
+    it('加载中应该显示 LoadingSpinner', async () => {
+      roomStore.loadingPublicRooms = true
+      roomStore.publicRoomsError = null
+      roomStore.publicRooms = []
+      
+      await flushPromises()
+      
+      expect(wrapper.find('.loading-spinner').exists()).toBe(true)
+      expect(wrapper.find('.loading-text').text()).toBe('加载公开房间...')
+    })
+
+    it('加载中不应该显示房间区域', async () => {
+      roomStore.loadingPublicRooms = true
+      roomStore.publicRooms = [
+        { id: 'room-1', name: '房间1', userCount: 2, maxUsers: 5, creatorNickname: '用户1' }
+      ]
+      
+      await flushPromises()
+      
+      expect(wrapper.find('.loading-spinner').exists()).toBe(true)
+      expect(wrapper.find('.rooms-section').exists()).toBe(false)
+    })
+  })
+
+  describe('错误状态测试', () => {
+    it('有错误时应该显示 ErrorComponent', async () => {
+      roomStore.loadingPublicRooms = false
+      roomStore.publicRoomsError = new Error('网络请求失败')
+      roomStore.publicRooms = []
+      
+      await flushPromises()
+      
+      expect(wrapper.find('.error-component').exists()).toBe(true)
+      expect(wrapper.find('.error-title').text()).toBe('加载失败')
+    })
+
+    it('有错误时不应该显示房间区域', async () => {
+      roomStore.loadingPublicRooms = false
+      roomStore.publicRoomsError = new Error('网络请求失败')
+      roomStore.publicRooms = [
+        { id: 'room-1', name: '房间1', userCount: 2, maxUsers: 5, creatorNickname: '用户1' }
+      ]
+      
+      await flushPromises()
+      
+      expect(wrapper.find('.error-component').exists()).toBe(true)
+      expect(wrapper.find('.rooms-section').exists()).toBe(false)
+    })
+
+    it('ErrorComponent 应该有重试按钮', async () => {
+      roomStore.loadingPublicRooms = false
+      roomStore.publicRoomsError = new Error('网络请求失败')
+      
+      await flushPromises()
+      
+      const retryButton = wrapper.find('.btn-retry')
+      expect(retryButton.exists()).toBe(true)
+      expect(retryButton.text()).toBe('重试')
+    })
+  })
+
   describe('生命周期测试', () => {
     it('挂载时应该获取公开房间', () => {
       expect(roomStore.fetchPublicRooms).toHaveBeenCalled()

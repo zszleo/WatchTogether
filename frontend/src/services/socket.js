@@ -32,7 +32,7 @@ class SocketService {
     // 重新加入房间
     this.socket.on('connect', () => {
       if (this.currentRoom.value) {
-        this.joinRoom(this.currentRoom.value.roomId, this.currentRoom.value.sessionId)
+        this.joinRoom(this.currentRoom.value.roomCode, this.currentRoom.value.sessionId)
       }
     })
   }
@@ -43,37 +43,37 @@ class SocketService {
     this.connected.value = false
   }
   
-  joinRoom(roomId, sessionId) {
-    this.currentRoom.value = { roomId, sessionId }
-    this.socket?.emit('join-room', { roomId, sessionId })
+  joinRoom(roomCode, sessionId) {
+    this.currentRoom.value = { roomCode, sessionId }
+    this.socket?.emit('join-room', { roomCode, sessionId })
   }
   
-  leaveRoom(roomId) {
-    this.socket?.emit('leave-room', { roomId })
+  leaveRoom(roomCode) {
+    this.socket?.emit('leave-room', { roomCode })
     this.currentRoom.value = null
   }
   
   // 视频控制
-  emitVideoPlay(roomId, time) {
-    this.socket?.emit('video:play', { roomId, time })
+  emitVideoPlay(roomCode, time) {
+    this.socket?.emit('video:play', { roomCode, time })
   }
   
-  emitVideoPause(roomId) {
-    this.socket?.emit('video:pause', { roomId })
+  emitVideoPause(roomCode) {
+    this.socket?.emit('video:pause', { roomCode })
   }
   
-  emitVideoSeek(roomId, time) {
-    this.socket?.emit('video:seek', { roomId, time })
+  emitVideoSeek(roomCode, time) {
+    this.socket?.emit('video:seek', { roomCode, time })
   }
   
-  emitVideoUrlChange(roomId, url) {
-    this.socket?.emit('video:url-change', { roomId, url })
+  emitVideoUrlChange(roomCode, url) {
+    this.socket?.emit('video:url-change', { roomCode, url })
   }
   
   // 聊天
-  emitChatMessage(roomId, content, type = 'text', senderId, senderNickname) {
+  emitChatMessage(roomCode, content, type = 'text', senderId, senderNickname) {
     this.socket?.emit('chat:message', {
-      roomId,
+      roomCode,
       content,
       type,
       senderId,

@@ -12,7 +12,7 @@
  * @param {Function} options.requestInterceptor - 请求拦截器（可选）
  * @param {Function} options.responseInterceptor - 响应拦截器（可选）
  * @returns {Promise} Promise对象
- */
+VITE_API_BASE_URL=http://localhost:18080 */
 export async function request(path, options = {}) {
   let { 
     method = 'GET', 
@@ -69,8 +69,20 @@ export async function request(path, options = {}) {
   // 设置请求头
   const defaultHeaders = {
     'Content-Type': 'application/json',
-    // 可以添加认证头等
   };
+  
+  // 自动添加 session ID header
+  const storedUser = localStorage.getItem('watchtogether_user');
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser);
+      if (userData.sessionId) {
+        defaultHeaders['X-Session-Id'] = userData.sessionId;
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+  }
   
   let requestHeaders = { ...defaultHeaders, ...headers };
   

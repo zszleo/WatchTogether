@@ -4,7 +4,7 @@
     <div class="chat-header">
       <div class="room-info">
         <h3 class="room-name">{{ roomStore.currentRoom?.name || '房间' }}</h3>
-        <span class="room-id">{{ roomStore.currentRoom?.id }}</span>
+        <span class="room-id">{{ roomStore.currentRoom?.code }}</span>
       </div>
       <button class="btn-copy-link" @click="copyInviteLink">
         复制邀请链接
@@ -84,27 +84,20 @@ function cleanupSocketListeners() {
 
 function handleSend(content, type = 'text') {
   if (!content.trim()) return
+  if (!roomStore.currentRoom?.code) return
   
   socketService.emitChatMessage(
-    roomStore.currentRoom.id,
+    roomStore.currentRoom.code,
     content,
     type,
     userStore.sessionId,
     userStore.nickname
   )
-  
-  // 不再本地立即显示，等待服务器广播避免重复
-  // chatStore.addMessage({
-  //   content,
-  //   type,
-  //   senderId: userStore.sessionId,
-  //   senderNickname: userStore.nickname,
-  //   timestamp: new Date().toISOString()
-  // })
 }
 
 async function copyInviteLink() {
-  const link = `${window.location.origin}/join/${roomStore.currentRoom.id}`
+  if (!roomStore.currentRoom?.code) return
+  const link = `${window.location.origin}/join/${roomStore.currentRoom.code}`
   try {
     await navigator.clipboard.writeText(link)
     alert('邀请链接已复制')
@@ -114,13 +107,15 @@ async function copyInviteLink() {
 }
 
 onMounted(async () => {
+  if (!roomStore.currentRoom?.code) return
+  
   setupSocketListeners()
   
   // 加入Socket房间
-  socketService.joinRoom(roomStore.currentRoom.id, userStore.sessionId)
+  socketService.joinRoom(roomStore.currentRoom.code, userStore.sessionId)
   
   // 加载历史消息
-  await chatStore.loadHistory(roomStore.currentRoom.id)
+  await chatStore.loadHistory(roomStore.currentRoom.code)
 })
 
 onUnmounted(() => {

@@ -19,6 +19,7 @@ dist-ssr/
 coverage/
 *.local.js
 .vite/
+.playwright-cli/
 
 # ============================
 # 后端 (Spring Boot/Maven)

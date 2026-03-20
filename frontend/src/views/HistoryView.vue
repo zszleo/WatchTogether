@@ -19,14 +19,14 @@
       <div v-else class="history-list">
         <div 
           v-for="item in history" 
-          :key="item.roomId"
+          :key="item.roomCode"
           class="history-card"
-          @click="goToRoom(item.roomId)"
+          @click="goToRoom(item.roomCode)"
         >
           <div class="history-info">
-            <h3 class="room-name">{{ item.roomName || '房间 ' + item.roomId }}</h3>
+            <h3 class="room-name">{{ item.roomName || '房间 ' + item.roomCode }}</h3>
             <p class="room-meta">
-              <span class="room-id">房间号: {{ item.roomId }}</span>
+              <span class="room-id">房间号: {{ item.roomCode }}</span>
               <span class="room-time">加入时间: {{ formatTime(item.joinedAt) }}</span>
             </p>
             <div class="room-stats">
@@ -58,8 +58,8 @@ async function loadHistory() {
   
   loading.value = true
   try {
-    const data = await SessionApi.getHistory(userStore.sessionId)
-    history.value = data.rooms || []
+    const resp = await SessionApi.getHistory(userStore.sessionId)
+    history.value = resp.data.rooms || []
   } catch (error) {
     history.value = []
   } finally {
@@ -86,8 +86,8 @@ function formatDate(timestamp) {
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
-function goToRoom(roomId) {
-  router.push(`/join/${roomId}`)
+function goToRoom(roomCode) {
+  router.push(`/join/${roomCode}`)
 }
 
 onMounted(() => {

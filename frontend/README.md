@@ -173,7 +173,7 @@ docker run -p 3000:80 watchtogether-frontend
 ```env
 # 开发环境配置
 VITE_APP_TITLE=一起看 (开发版)
-VITE_API_BASE_URL=http://localhost:18080/api
+VITE_API_BASE_URL=http://localhost:18080
 VITE_SOCKET_URL=http://localhost:19090
 VITE_USE_MOCK=true
 VITE_APP_VERSION=1.0.0-dev

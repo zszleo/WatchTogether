@@ -31,14 +31,18 @@
         </router-link>
       </div>
       
-      <section class="rooms-section" v-if="publicRooms.length > 0">
+      <LoadingSpinner v-if="loadingPublicRooms" text="加载公开房间..." />
+      
+      <ErrorComponent v-else-if="publicRoomsError" :error="publicRoomsError" />
+      
+      <section class="rooms-section" v-else-if="publicRooms.length > 0">
         <h2 class="section-title">公开房间</h2>
         <div class="rooms-grid">
           <div 
             v-for="room in publicRooms" 
             :key="room.id" 
             class="room-card"
-            @click="goToRoom(room.id)"
+            @click="goToRoom(room.code)"
           >
             <div class="room-info">
               <h3 class="room-name">{{ room.name || '房间 ' + room.id }}</h3>
@@ -60,17 +64,19 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRoomStore } from '@/stores/room'
 import { storeToRefs } from 'pinia'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import ErrorComponent from '@/components/common/ErrorComponent.vue'
 
 const router = useRouter()
 const roomStore = useRoomStore()
-const { publicRooms } = storeToRefs(roomStore)
+const { publicRooms, loadingPublicRooms, publicRoomsError } = storeToRefs(roomStore)
 
 onMounted(() => {
   roomStore.fetchPublicRooms()
 })
 
-function goToRoom(roomId) {
-  router.push(`/join/${roomId}`)
+function goToRoom(roomCode) {
+  router.push(`/join/${roomCode}`)
 }
 </script>
 

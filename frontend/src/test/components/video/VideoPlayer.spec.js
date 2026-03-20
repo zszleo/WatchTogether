@@ -16,7 +16,7 @@ describe('VideoPlayer', () => {
     roomStore = useRoomStore()
     
     // 设置当前房间
-    roomStore.currentRoom = { id: 'test-room-123', name: '测试房间' }
+    roomStore.currentRoom = { id: 'test-room-123', code: 'ABC123', name: '测试房间' }
     roomStore.videoState = {
       url: '',
       currentTime: 0,
@@ -212,7 +212,7 @@ describe('VideoPlayer', () => {
       wrapper.vm.seek(60)
       
       expect(video.element.currentTime).toBe(60)
-      expect(socketService.emitVideoSeek).toHaveBeenCalledWith('test-room-123', 60)
+      expect(socketService.emitVideoSeek).toHaveBeenCalledWith('ABC123', 60)
     })
 
     it('seek 方法应该播放视频如果当前未播放', () => {

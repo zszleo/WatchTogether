@@ -22,7 +22,7 @@
         <div class="form-group">
           <label class="form-label">房间号</label>
           <input 
-            v-model="roomId"
+            v-model="roomCode"
             type="text" 
             class="input input-large"
             placeholder="输入6位房间号"
@@ -72,28 +72,28 @@ const userStore = useUserStore()
 const roomStore = useRoomStore()
 
 const nickname = ref(userStore.nickname || '')
-const roomId = ref('')
+const roomCode = ref('')
 const loading = ref(false)
 const copied = ref(false)
 const linkInput = ref(null)
 
 // 从URL参数获取房间号
 onMounted(() => {
-  if (route.params.roomId) {
-    roomId.value = route.params.roomId.toUpperCase()
+  if (route.params.roomCode) {
+    roomCode.value = route.params.roomCode.toUpperCase()
   }
   
   // 解析邀请链接
   const urlParams = new URLSearchParams(window.location.search)
   const roomFromUrl = urlParams.get('room')
   if (roomFromUrl) {
-    roomId.value = roomFromUrl.toUpperCase()
+    roomCode.value = roomFromUrl.toUpperCase()
   }
 })
 
 const inviteLink = computed(() => {
-  if (!roomId.value) return ''
-  return `${window.location.origin}/join/${roomId.value}`
+  if (!roomCode.value) return ''
+  return `${window.location.origin}/join/${roomCode.value}`
 })
 
 async function handleJoin() {
@@ -110,8 +110,8 @@ async function handleJoin() {
     }
     
     // 加入房间
-    await roomStore.joinRoom(roomId.value, userStore.sessionId)
-    router.push(`/room/${roomId.value}`)
+    await roomStore.joinRoom(roomCode.value, userStore.sessionId)
+    router.push(`/room/${roomCode.value}`)
   } catch (error) {
     alert(error.message || '加入房间失败')
   } finally {

@@ -1,12 +1,37 @@
 /**
  * 响应参数对象
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-19T08:16:19.866Z
+ * 生成时间: 2026-03-20T11:06:24.527Z
  */
 
 /**
  * 更新用户资料 响应数据
  * @typedef {Object} updateProfileResponse
+ * @property {any} data - OK
+ */
+/**
+ * 创建测试数据 响应数据
+ * @typedef {Object} createTestDataResponse
+ * @property {any} data - OK
+ */
+/**
+ * 清理测试用户 响应数据
+ * @typedef {Object} clearUsersResponse
+ * @property {any} data - OK
+ */
+/**
+ * 清理测试房间 响应数据
+ * @typedef {Object} clearRoomsResponse
+ * @property {any} data - OK
+ */
+/**
+ * 清理测试消息 响应数据
+ * @typedef {Object} clearMessagesResponse
+ * @property {any} data - OK
+ */
+/**
+ * 清理所有测试数据 响应数据
+ * @typedef {Object} clearAllResponse
  * @property {any} data - OK
  */
 /**
@@ -87,11 +112,6 @@
 /**
  * 获取房间邀请链接 响应数据
  * @typedef {Object} getInviteLinkResponse
- * @property {any} data - OK
- */
-/**
- * 通过房间码获取房间详情 响应数据
- * @typedef {Object} getRoomByCodeResponse
  * @property {any} data - OK
  */
 /**

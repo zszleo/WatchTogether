@@ -38,7 +38,8 @@ export const useUserStore = defineStore('user', () => {
   // 创建会话
   async function createSession(nick) {
     const nicknameToUse = nick || `游客${Math.floor(Math.random() * 10000)}`
-    const data = await SessionApi.createSession({ nickname: nicknameToUse })
+    const resp = await SessionApi.createSession({ nickname: nicknameToUse })
+    const data = resp.data
     
     sessionId.value = data.id
     nickname.value = data.nickname
@@ -53,7 +54,8 @@ export const useUserStore = defineStore('user', () => {
   async function updateProfile(data) {
     if (!sessionId.value) return
     
-    const updated = await SessionApi.updateProfile(sessionId.value, data)
+    const resp = await SessionApi.updateProfile(sessionId.value, data)
+    const updated = resp.data
     nickname.value = updated.nickname
     avatar.value = updated.avatar
     saveToStorage()

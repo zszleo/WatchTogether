@@ -29,7 +29,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { EmojisApi } from '@/services/api'
+import { EmojiApi } from '@/services/api'
 
 const emit = defineEmits(['select', 'close'])
 
@@ -76,7 +76,8 @@ async function preloadEmojiData() {
   globalEmojiCache.promise = (async () => {
     try {
       // 先尝试获取默认表情
-      let emojisData = await EmojisApi.getDefaultEmojis()
+      let emojisResp = await EmojiApi.getDefaultEmojis()
+      let emojisData = emojisResp.data
       console.log('默认表情数据:', emojisData)
       
       // 如果默认表情为空，尝试获取用户表情
@@ -84,7 +85,8 @@ async function preloadEmojiData() {
         const userStore = await import('@/stores/user').then(m => m.useUserStore())
         console.log('用户昵称:', userStore.nickname)
         if (userStore.nickname) {
-          emojisData = await EmojisApi.getEmojisByNickname(userStore.nickname)
+          let userEmojisResp = await EmojiApi.getEmojisByNickname(userStore.nickname)
+          emojisData = userEmojisResp.data
           console.log('用户表情数据:', emojisData)
         }
       }

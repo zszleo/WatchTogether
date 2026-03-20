@@ -48,10 +48,11 @@ export const useChatStore = defineStore('chat', () => {
   }
   
   // 加载历史消息
-  async function loadHistory(roomId, page = 1) {
+  async function loadHistory(roomCode, page = 1) {
     loading.value = true
     try {
-      const data = await RoomApi.getChatMessages(roomId, { page, size: 20 })
+      const resp = await RoomApi.getChatMessages(roomCode, { page, size: 20 })
+      const data = resp.data
       const historicalMessages = (data.messages || []).map(msg => ({
         id: msg.id,
         content: msg.content,

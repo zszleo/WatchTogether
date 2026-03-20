@@ -99,7 +99,7 @@ function handlePlay() {
   if (!isSyncing.value) {
     isPlaying.value = true
     roomStore.updateVideoState({ isPlaying: true })
-    socketService.emitVideoPlay(roomStore.currentRoom.id, currentTime.value)
+    socketService.emitVideoPlay(roomStore.currentRoom?.code, currentTime.value)
   }
 }
 
@@ -107,7 +107,7 @@ function handlePause() {
   if (!isSyncing.value) {
     isPlaying.value = false
     roomStore.updateVideoState({ isPlaying: false })
-    socketService.emitVideoPause(roomStore.currentRoom.id)
+    socketService.emitVideoPause(roomStore.currentRoom?.code)
   }
 }
 
@@ -131,7 +131,7 @@ function seek(time) {
   if (!isPlaying.value) {
     videoRef.value.play()
   }
-  socketService.emitVideoSeek(roomStore.currentRoom.id, time)
+  socketService.emitVideoSeek(roomStore.currentRoom?.code, time)
 }
 
 function setVolume(val) {

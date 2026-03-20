@@ -77,7 +77,7 @@ const videoSource = ref('url')
 const videoUrlInput = ref('')
 
 onMounted(async () => {
-  const roomId = route.params.roomId
+  const roomCode = route.params.roomCode
   
   try {
     // 如果没有会话，先创建
@@ -87,7 +87,7 @@ onMounted(async () => {
     }
     
     // 加入房间
-    await roomStore.joinRoom(roomId, userStore.sessionId)
+    await roomStore.joinRoom(roomCode, userStore.sessionId)
   } catch (error) {
     alert('加入房间失败: ' + error.message)
     router.push('/')
@@ -102,7 +102,7 @@ onUnmounted(() => {
 function changeVideoUrl() {
   if (!videoUrlInput.value.trim()) return
   
-  socketService.emitVideoUrlChange(roomStore.currentRoom.id, videoUrlInput.value)
+  socketService.emitVideoUrlChange(roomStore.currentRoom?.code, videoUrlInput.value)
   videoUrlInput.value = ''
 }
 
@@ -111,7 +111,7 @@ function handleVideoUpload(event) {
   if (!file) return
   
   const url = URL.createObjectURL(file)
-  socketService.emitVideoUrlChange(roomStore.currentRoom.id, url)
+  socketService.emitVideoUrlChange(roomStore.currentRoom?.code, url)
 }
 </script>
 

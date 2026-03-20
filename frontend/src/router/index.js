@@ -27,12 +27,12 @@ const router = createRouter({
       component: asyncComponent(() => import('@/views/CreateRoomView.vue'))
     },
     {
-      path: '/join/:roomId?',
+      path: '/join/:roomCode?',
       name: 'join-room',
       component: asyncComponent(() => import('@/views/JoinRoomView.vue'))
     },
     {
-      path: '/room/:roomId',
+      path: '/room/:roomCode',
       name: 'room',
       component: asyncComponent(() => import('@/views/RoomView.vue'))
     },

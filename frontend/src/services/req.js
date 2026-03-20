@@ -1,7 +1,7 @@
 /**
  * 请求参数对象
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-19T08:16:19.866Z
+ * 生成时间: 2026-03-20T11:06:24.526Z
  */
 
 /**
@@ -19,7 +19,7 @@
  * 加入房间历史记录 请求参数
  * @typedef {Object} joinRoomRequest
  * @property {string} sessionId - 必填 - 会话ID
- * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} roomCode - 必填 - 房间码
  */
 /**
  * 上传文件 请求参数
@@ -60,32 +60,26 @@
 /**
  * 获取房间详情 请求参数
  * @typedef {Object} getRoomRequest
- * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} roomCode - 必填 - 房间码
  * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
  */
 /**
  * 删除房间 请求参数
  * @typedef {Object} deleteRoomRequest
- * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} roomCode - 必填 - 房间码
  */
 /**
  * 获取聊天消息 请求参数
  * @typedef {Object} getChatMessagesRequest
- * @property {integer} roomId - 必填 - 房间ID
+ * @property {string} roomCode - 必填 - 房间码
  * @property {integer} page - 可选 - 页码（从0开始）
- * @property {integer} size - 可选 - 每页大小
+ * @property {integer} size - 可选 - 每页大小，最大100
  * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
  */
 /**
  * 获取房间邀请链接 请求参数
  * @typedef {Object} getInviteLinkRequest
- * @property {integer} roomId - 必填 - 房间ID
- * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
- */
-/**
- * 通过房间码获取房间详情 请求参数
- * @typedef {Object} getRoomByCodeRequest
- * @property {string} roomCode - 必填 - 房间邀请码
+ * @property {string} roomCode - 必填 - 房间码
  * @property {string} sessionId - 必填 - 用户会话ID（访问私有房间时必需）
  */
 /**

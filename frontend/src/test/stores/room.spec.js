@@ -8,6 +8,9 @@ vi.mock('@/services/api', () => ({
     createRoom: vi.fn(),
     getRoom: vi.fn(),
     getPublicRooms: vi.fn()
+  },
+  SessionApi: {
+    joinRoom: vi.fn()
   }
 }))
 
@@ -58,22 +61,27 @@ describe('Room Store', () => {
     it('应该成功创建房间', async () => {
       const mockRoom = {
         id: 'room_123',
+        code: 'ABC123',
         name: '测试房间',
         ownerId: 'user_123'
       }
       
-      const { RoomApi } = await import('@/services/api')
-      RoomApi.createRoom.mockResolvedValue(mockRoom)
+      const { RoomApi, SessionApi } = await import('@/services/api')
+      RoomApi.createRoom.mockResolvedValue({ data: mockRoom })
+      SessionApi.joinRoom.mockResolvedValue({})
       
       const result = await roomStore.createRoom({
         name: '测试房间',
-        description: '测试描述'
+        description: '测试描述',
+        creatorSessionId: 'session_123'
       })
       
       expect(RoomApi.createRoom).toHaveBeenCalledWith({
         name: '测试房间',
-        description: '测试描述'
+        description: '测试描述',
+        creatorSessionId: 'session_123'
       })
+      expect(SessionApi.joinRoom).toHaveBeenCalledWith('session_123', 'room_123')
       expect(result).toEqual(mockRoom)
     })
 
@@ -94,10 +102,11 @@ describe('Room Store', () => {
         users: []
       }
       
-      const { RoomApi } = await import('@/services/api')
+      const { RoomApi, SessionApi } = await import('@/services/api')
       const { socketService } = await import('@/services/socket')
       
-      RoomApi.getRoom.mockResolvedValue(mockRoom)
+      RoomApi.getRoom.mockResolvedValue({ data: mockRoom })
+      SessionApi.joinRoom.mockResolvedValue({})
       
       const result = await roomStore.joinRoom('room_123')
       
@@ -107,24 +116,29 @@ describe('Room Store', () => {
       expect(result).toEqual(mockRoom)
     })
 
-    it('应该在有 sessionId 时加入 socket 房间', async () => {
-      const mockRoom = { id: 'room_123', name: '测试房间' }
+    it('应该在有 sessionId 时加入 socket 房间并记录历史', async () => {
+      const mockRoom = { id: 'room_123', code: 'ABC123', name: '测试房间' }
       const sessionId = 'session_123'
       
-      const { RoomApi } = await import('@/services/api')
+      const { RoomApi, SessionApi } = await import('@/services/api')
       const { socketService } = await import('@/services/socket')
       
-      RoomApi.getRoom.mockResolvedValue(mockRoom)
+      RoomApi.getRoom.mockResolvedValue({ data: mockRoom })
+      SessionApi.joinRoom.mockResolvedValue({})
       
       const joinPromise = roomStore.joinRoom('room_123', sessionId)
       
       // 等待 joinRoom 完成
       await joinPromise
       
-      // 等待 setTimeout 执行 (500ms)
+      // 验证历史记录API被调用（使用roomId）
+      expect(SessionApi.joinRoom).toHaveBeenCalledWith(sessionId, 'room_123')
+      
+      // 等待 setTimeout 执行 (500 ms)
       await new Promise(resolve => setTimeout(resolve, 600))
       
-      expect(socketService.joinRoom).toHaveBeenCalledWith('room_123', sessionId)
+      // socket.joinRoom 使用 room.code
+      expect(socketService.joinRoom).toHaveBeenCalledWith('ABC123', sessionId)
     })
 
     it('应该处理加入房间失败', async () => {
@@ -141,7 +155,7 @@ describe('Room Store', () => {
       const { socketService } = await import('@/services/socket')
       
       // 先加入房间
-      roomStore.currentRoom = { id: 'room_123', name: '测试房间' }
+      roomStore.currentRoom = { id: 'room_123', code: 'ABC123', name: '测试房间' }
       roomStore.users = [
         { sessionId: '1', username: 'user1' },
         { sessionId: '2', username: 'user2' }
@@ -255,7 +269,7 @@ describe('Room Store', () => {
       ]
       
       const { RoomApi } = await import('@/services/api')
-      RoomApi.getPublicRooms.mockResolvedValue(mockRooms)
+      RoomApi.getPublicRooms.mockResolvedValue({ data: mockRooms })
       
       await roomStore.fetchPublicRooms()
       
@@ -267,7 +281,11 @@ describe('Room Store', () => {
       const { RoomApi } = await import('@/services/api')
       RoomApi.getPublicRooms.mockRejectedValue(new Error('网络错误'))
       
-      await expect(roomStore.fetchPublicRooms()).rejects.toThrow('网络错误')
+      // fetchPublicRooms 会捕获错误并设置 publicRoomsError
+      await roomStore.fetchPublicRooms()
+      
+      expect(roomStore.publicRoomsError).not.toBeNull()
+      expect(roomStore.publicRooms).toEqual([])
     })
   })
 })

@@ -43,7 +43,7 @@ describe('ChatPanel', () => {
     userStore = useUserStore()
     
     // 设置初始状态
-    roomStore.currentRoom = { id: 'test-room-123', name: '测试房间' }
+    roomStore.currentRoom = { id: 'test-room-123', code: 'ABC123', name: '测试房间' }
     roomStore.users = []
     roomStore.userCount = 0
     userStore.sessionId = 'session-123'
@@ -221,11 +221,11 @@ describe('ChatPanel', () => {
     })
 
     it('挂载时应该加入 socket 房间', () => {
-      expect(socketService.joinRoom).toHaveBeenCalledWith('test-room-123', 'session-123')
+      expect(socketService.joinRoom).toHaveBeenCalledWith('ABC123', 'session-123')
     })
 
     it('挂载时应该加载历史消息', () => {
-      expect(chatStore.loadHistory).toHaveBeenCalledWith('test-room-123')
+      expect(chatStore.loadHistory).toHaveBeenCalledWith('ABC123')
     })
 
     it('卸载时应该清理 socket 监听器', () => {
