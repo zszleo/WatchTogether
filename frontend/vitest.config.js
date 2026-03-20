@@ -25,7 +25,7 @@ export default defineConfig({
       branches: 80,
       functions: 80,
       statements: 80,
-      exclude: ['**/node_modules/**', '**/dist/**', '**/src/main.js', '**/src/App.vue', '**/scripts/**']
+      exclude: ['**/test/utils/**','**/node_modules/**', '**/dist/**', '**/src/main.js', '**/src/App.vue', '**/scripts/**']
     }
   }
 })

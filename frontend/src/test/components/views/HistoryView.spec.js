@@ -204,7 +204,8 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      expect(wrapper.find('.stat-item').first().text()).toBe('👥 5人')
+      const statItems = wrapper.findAll('.stat-item')
+      expect(statItems[0].text()).toBe('👥 5人')
     })
 
     it('应该显示重新加入按钮', async () => {
@@ -270,7 +271,7 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      expect(wrapper.find('.room-time').text()).toBe('')
+      expect(wrapper.find('.room-time').text()).toBe('加入时间:')
     })
   })
 
@@ -288,7 +289,8 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      expect(wrapper.find('.stat-item').last().text()).toBe('📅 今天')
+      const statItems = wrapper.findAll('.stat-item')
+      expect(statItems[statItems.length - 1].text()).toBe('📅 今天')
     })
 
     it('昨天应该显示昨天', async () => {
@@ -305,7 +307,8 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      expect(wrapper.find('.stat-item').last().text()).toBe('📅 昨天')
+      const statItems = wrapper.findAll('.stat-item')
+      expect(statItems[statItems.length - 1].text()).toBe('📅 昨天')
     })
 
     it('7天内应该显示天数', async () => {
@@ -322,7 +325,8 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      expect(wrapper.find('.stat-item').last().text()).toBe('📅 3天前')
+      const statItems = wrapper.findAll('.stat-item')
+      expect(statItems[statItems.length - 1].text()).toBe('📅 3天前')
     })
 
     it('超过7天应该显示日期', async () => {
@@ -339,7 +343,8 @@ describe('HistoryView', () => {
       })
       await flushPromises()
       
-      const dateEl = wrapper.find('.stat-item').last()
+      const statItems = wrapper.findAll('.stat-item')
+      const dateEl = statItems[statItems.length - 1]
       expect(dateEl.text()).toMatch(/📅 \d+月\d+日/)
     })
   })

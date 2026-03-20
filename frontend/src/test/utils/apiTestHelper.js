@@ -15,6 +15,10 @@ const SOCKET_BASE_URL = 'http://localhost:19090'
  * @returns {Function} 请求函数
  */
 export function createApiClient(baseURL = API_BASE_URL) {
+  let defaultHeaders = {
+    'Content-Type': 'application/json'
+  }
+  
   /**
    * 发送 HTTP 请求
    * @param {string} endpoint - API 端点
@@ -25,7 +29,7 @@ export function createApiClient(baseURL = API_BASE_URL) {
     const url = `${baseURL}${endpoint}`
     const config = {
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...options.headers
       },
       ...options
@@ -47,6 +51,23 @@ export function createApiClient(baseURL = API_BASE_URL) {
   }
 
   return {
+    /**
+     * 设置默认请求头
+     * @param {string} key - 头部键
+     * @param {string} value - 头部值
+     */
+    setDefaultHeader: (key, value) => {
+      defaultHeaders[key] = value
+    },
+    
+    /**
+     * 移除默认请求头
+     * @param {string} key - 头部键
+     */
+    removeDefaultHeader: (key) => {
+      delete defaultHeaders[key]
+    },
+    
     /**
      * GET 请求
      * @param {string} endpoint - API 端点
@@ -210,30 +231,26 @@ export const testCleanupApi = {
    * 清理测试用户
    * @returns {Promise<Object>} 响应数据
    */
-  clearUsers: () => testApi.post('/test/clear-users'),
+  clearUsers: () => testApi.post('/api/test/clear-users'),
 
   /**
    * 清理测试房间
    * @returns {Promise<Object>} 响应数据
    */
-  clearRooms: () => testApi.post('/test/clear-rooms'),
+  clearRooms: () => testApi.post('/api/test/clear-rooms'),
 
   /**
    * 清理测试消息
    * @returns {Promise<Object>} 响应数据
    */
-  clearMessages: () => testApi.post('/test/clear-messages'),
+  clearMessages: () => testApi.post('/api/test/clear-messages'),
 
   /**
    * 清理所有测试数据
    * @returns {Promise<void>}
    */
   clearAll: async () => {
-    await Promise.all([
-      testCleanupApi.clearUsers(),
-      testCleanupApi.clearRooms(),
-      testCleanupApi.clearMessages()
-    ])
+    await testApi.post('/api/test/clear-all')
   }
 }
 

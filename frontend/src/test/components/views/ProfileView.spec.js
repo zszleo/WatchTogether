@@ -133,12 +133,13 @@ describe('ProfileView', () => {
       expect(wrapper.find('.avatar-section').exists()).toBe(true)
     })
 
-    it('应该显示当前头像', () => {
+    it('应该显示当前头像', async () => {
       wrapper = mount(ProfileView, {
         global: {
           plugins: [pinia, router]
         }
       })
+      await flushPromises()
       
       expect(wrapper.find('.avatar-display .avatar-emoji').text()).toBe('😀')
     })
@@ -154,14 +155,17 @@ describe('ProfileView', () => {
       expect(wrapper.findAll('.avatar-option').length).toBe(12)
     })
 
-    it('应该显示会话ID', () => {
+    it('应该显示会话ID', async () => {
       wrapper = mount(ProfileView, {
         global: {
           plugins: [pinia, router]
         }
       })
+      await flushPromises()
       
-      expect(wrapper.find('.info-item').first().find('.info-value').text()).toBe('test-session-123')
+      const infoItems = wrapper.findAll('.info-item')
+      const sessionIdEl = infoItems[0].find('.info-value')
+      expect(sessionIdEl.text()).toBe('test-session-123')
     })
 
     it('应该显示创建时间', () => {
@@ -185,12 +189,13 @@ describe('ProfileView', () => {
       vi.spyOn(userStore, 'updateProfile').mockResolvedValue()
     })
 
-    it('表单初始值应该与store一致', () => {
+    it('表单初始值应该与store一致', async () => {
       wrapper = mount(ProfileView, {
         global: {
           plugins: [pinia, router]
         }
       })
+      await flushPromises()
       
       const nicknameInput = wrapper.find('input[type="text"]')
       expect(nicknameInput.element.value).toBe('原始昵称')
@@ -306,12 +311,13 @@ describe('ProfileView', () => {
       expect(nicknameInput.element.value).toBe('原始昵称')
     })
 
-    it('无更改时按钮应该禁用', () => {
+    it('无更改时按钮应该禁用', async () => {
       wrapper = mount(ProfileView, {
         global: {
           plugins: [pinia, router]
         }
       })
+      await flushPromises()
       
       const saveButton = wrapper.find('.btn-primary')
       expect(saveButton.attributes('disabled')).toBeDefined()
@@ -410,14 +416,14 @@ describe('ProfileView', () => {
           plugins: [pinia, router]
         }
       })
+      await flushPromises()
       
       const logoutButton = wrapper.find('.btn-logout')
       await logoutButton.trigger('click')
+      await flushPromises()
       
       expect(userStore.logout).toHaveBeenCalled()
       expect(router.currentRoute.value.path).toBe('/')
-      
-      confirm.mockRestore()
     })
 
     it('取消退出登录不应该清空session', async () => {

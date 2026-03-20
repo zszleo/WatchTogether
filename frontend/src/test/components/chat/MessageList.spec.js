@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import MessageList from '@/components/chat/MessageList.vue'
@@ -15,6 +15,9 @@ describe('MessageList', () => {
     userStore = useUserStore()
     userStore.sessionId = 'session-123'
     
+    // Mock scrollTo method for jsdom
+    Element.prototype.scrollTo = vi.fn()
+    
     wrapper = mount(MessageList, {
       global: {
         plugins: [pinia]
@@ -30,6 +33,7 @@ describe('MessageList', () => {
     if (wrapper) {
       wrapper.unmount()
     }
+    delete Element.prototype.scrollTo
   })
 
   describe('渲染测试', () => {

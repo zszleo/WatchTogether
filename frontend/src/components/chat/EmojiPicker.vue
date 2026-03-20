@@ -53,6 +53,15 @@ function resetGlobalCache() {
   globalEmojiCache.promise = null
 }
 
+// 导出用于测试
+defineExpose({
+  resetGlobalCache,
+  loadData,
+  preloadEmojiData,
+  emojis,
+  previewEmoji
+})
+
 // 预加载数据
 async function preloadEmojiData() {
   if (globalEmojiCache.loading && globalEmojiCache.promise) {

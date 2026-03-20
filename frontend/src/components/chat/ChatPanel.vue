@@ -103,10 +103,14 @@ function handleSend(content, type = 'text') {
   // })
 }
 
-function copyInviteLink() {
+async function copyInviteLink() {
   const link = `${window.location.origin}/join/${roomStore.currentRoom.id}`
-  navigator.clipboard.writeText(link)
-  alert('邀请链接已复制')
+  try {
+    await navigator.clipboard.writeText(link)
+    alert('邀请链接已复制')
+  } catch (error) {
+    alert('复制失败，请手动复制链接')
+  }
 }
 
 onMounted(async () => {

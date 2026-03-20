@@ -159,4 +159,129 @@ describe('EmojiPicker', () => {
       expect(wrapper.find('.emoji-content').classes()).not.toContain('loading')
     })
   })
+
+  describe('缓存测试', () => {
+    it('应该支持重置全局缓存', async () => {
+      // 先加载数据
+      await flushPromises()
+      expect(wrapper.findAll('.emoji-btn').length).toBeGreaterThan(0)
+      
+      // 调用 resetGlobalCache
+      wrapper.vm.resetGlobalCache()
+      
+      // 创建新实例验证缓存已重置
+      vi.resetModules()
+      const emojiModule = await import('@/components/chat/EmojiPicker.vue')
+      const NewEmojiPicker = emojiModule.default
+      
+      const callCountBefore = EmojisApi.getDefaultEmojis.mock.calls.length
+      
+      const newWrapper = mount(NewEmojiPicker, {
+        global: {
+          plugins: [pinia]
+        }
+      })
+      await flushPromises()
+      
+      // 应该重新请求 API
+      expect(EmojisApi.getDefaultEmojis.mock.calls.length).toBeGreaterThan(callCountBefore)
+      newWrapper.unmount()
+    })
+
+    it('缓存已加载时应该直接返回', async () => {
+      // 第一次加载
+      await flushPromises()
+      
+      // 创建新实例，应该使用缓存
+      const newWrapper = mount(EmojiPicker, {
+        global: {
+          plugins: [pinia]
+        }
+      })
+      await flushPromises()
+      
+      expect(newWrapper.findAll('.emoji-btn').length).toBeGreaterThan(0)
+      newWrapper.unmount()
+    })
+
+    it('默认表情为空时应该尝试获取用户表情', async () => {
+      // 重置缓存
+      wrapper.vm.resetGlobalCache()
+      
+      // Mock 默认表情返回空
+      EmojisApi.getDefaultEmojis.mockResolvedValueOnce([])
+      EmojisApi.getEmojisByNickname.mockResolvedValueOnce([
+        { id: 1, name: 'custom1', unicode: '🎉' }
+      ])
+      
+      // 重新加载数据
+      await wrapper.vm.loadData()
+      await flushPromises()
+      
+      // 验证调用了获取用户表情的 API
+      expect(EmojisApi.getEmojisByNickname).toHaveBeenCalledWith('testuser')
+    })
+  })
+
+  describe('边界情况测试', () => {
+    it('loadData 缓存命中时应该直接返回', async () => {
+      // 确保缓存已加载
+      await flushPromises()
+      
+      // 再次调用 loadData
+      await wrapper.vm.loadData()
+      
+      // 应该不会重复请求 API
+      const callCount = EmojisApi.getDefaultEmojis.mock.calls.length
+      await wrapper.vm.loadData()
+      expect(EmojisApi.getDefaultEmojis.mock.calls.length).toBe(callCount)
+    })
+
+    it('preloadEmojiData 已加载时应该直接返回', async () => {
+      // 确保缓存已加载
+      await flushPromises()
+      
+      // 记录当前调用次数
+      const callCountBefore = EmojisApi.getDefaultEmojis.mock.calls.length
+      
+      // 再次调用 preloadEmojiData，应该直接返回而不重新请求
+      await wrapper.vm.preloadEmojiData()
+      
+      // API 不应该被再次调用
+      expect(EmojisApi.getDefaultEmojis.mock.calls.length).toBe(callCountBefore)
+    })
+
+    it('表情没有 unicode 时应该显示 name', async () => {
+      // 直接设置 emojis 来测试显示逻辑
+      wrapper.vm.emojis = [{ id: 1, name: 'custom-emoji', unicode: null }]
+      await flushPromises()
+      
+      const emojiButton = wrapper.find('.emoji-btn')
+      expect(emojiButton.text()).toBe('custom-emoji')
+    })
+
+    it('preloadEmojiData 失败时 loadData 应该静默处理', async () => {
+      // Mock API 失败
+      EmojisApi.getDefaultEmojis.mockRejectedValueOnce(new Error('Network error'))
+      
+      // 重置模块
+      vi.resetModules()
+      
+      const emojiModule = await import('@/components/chat/EmojiPicker.vue')
+      const NewEmojiPicker = emojiModule.default
+      
+      const newWrapper = mount(NewEmojiPicker, {
+        global: {
+          plugins: [pinia]
+        }
+      })
+      
+      // 等待异步操作完成，不应该抛出错误
+      await flushPromises()
+      
+      // 组件应该正常渲染，只是没有表情数据
+      expect(newWrapper.find('.emoji-picker-enhanced').exists()).toBe(true)
+      newWrapper.unmount()
+    })
+  })
 })
