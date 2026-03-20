@@ -1,6 +1,8 @@
 package com.watchtogether.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.corundumstudio.socketio.SocketIOServer;
+import com.watchtogether.config.SocketIOStartup;
 import com.watchtogether.dto.req.CreateRoomReq;
 import com.watchtogether.dto.resp.ApiResp;
 import com.watchtogether.dto.resp.RoomResp;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -28,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RoomController.class)
+@ActiveProfiles("test")
 class RoomControllerTest {
 
     @Autowired
@@ -41,6 +45,12 @@ class RoomControllerTest {
 
     @MockBean
     private SessionService sessionService;
+
+    @MockBean
+    private SocketIOStartup socketIOStartup;
+
+    @MockBean
+    private SocketIOServer socketIOServer;
 
     private CreateRoomReq createRoomRequest;
     private Room mockRoom;
