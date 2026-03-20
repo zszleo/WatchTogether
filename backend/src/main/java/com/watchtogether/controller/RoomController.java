@@ -22,7 +22,6 @@ import java.util.Optional;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/room")
@@ -44,7 +43,6 @@ public class RoomController {
     )
     public ResponseEntity<ApiResp<RoomResp>> createRoom(
             @Valid @RequestBody 
-            @Schema(description = "创建房间的请求参数") 
             CreateRoomReq request,
             @SessionId
             @Parameter(description = "用户会话ID", example = "sess_abc123def456") 
@@ -68,27 +66,26 @@ public class RoomController {
         return ResponseEntity.ok(ApiResp.success(rooms));
     }
 
-    @GetMapping("/{roomId}")
+    @GetMapping("/{roomCode}")
     @Operation(
         summary = "获取房间详情",
-        description = "根据房间ID获取房间详细信息，私有房间需要有效的会话ID"
+        description = "根据房间码获取房间详细信息，私有房间需要有效的会话ID"
     )
     public ResponseEntity<ApiResp<RoomResp>> getRoom(
             @PathVariable 
-            @Parameter(description = "房间ID", example = "123") 
-            Long roomId,
+            @Parameter(description = "房间码", example = "ABC123") 
+            String roomCode,
             @SessionId(required = false)
             @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
             String sessionId) {
-        log.info("getRoom called with roomId: {}, sessionId: {}", roomId, sessionId);
+        log.info("getRoom called with roomCode: {}, sessionId: {}", roomCode, sessionId);
         
-        Optional<Room> roomOpt = roomService.getRoomById(roomId);
+        Optional<Room> roomOpt = roomService.getRoomByCode(roomCode);
         if (roomOpt.isEmpty()) {
             return new ResponseEntity<>(ApiResp.notFound("Room not found"), HttpStatus.NOT_FOUND);
         }
         
         Room room = roomOpt.get();
-        // Check if room is private and user has access
         if (!room.getIsPublic() && sessionId == null) {
             return new ResponseEntity<>(ApiResp.unauthorized("Access denied to private room"), HttpStatus.UNAUTHORIZED);
         }
@@ -97,14 +94,35 @@ public class RoomController {
         return ResponseEntity.ok(ApiResp.success(response));
     }
 
-    @GetMapping("/code/{roomCode}")
+    @DeleteMapping("/{roomCode}")
     @Operation(
-        summary = "通过房间码获取房间详情",
-        description = "根据房间邀请码获取房间详细信息，私有房间需要有效的会话ID"
+        summary = "删除房间",
+        description = "删除指定房间，需要房间所有者权限"
     )
-    public ResponseEntity<ApiResp<RoomResp>> getRoomByCode(
+    public ResponseEntity<ApiResp<Void>> deleteRoom(
             @PathVariable 
-            @Parameter(description = "房间邀请码", example = "ABC123") 
+            @Parameter(description = "房间码", example = "ABC123") 
+            String roomCode,
+            @SessionId
+            @Parameter(description = "用户会话ID（必须为房间所有者）", example = "sess_abc123def456") 
+            String sessionId) {
+        
+        boolean deleted = roomService.deleteRoomByCode(roomCode, sessionId);
+        if (!deleted) {
+            return new ResponseEntity<>(ApiResp.notFound("Room not found or access denied"), HttpStatus.NOT_FOUND);
+        }
+        
+        return ResponseEntity.ok(ApiResp.success("Room deleted successfully", null));
+    }
+
+    @GetMapping("/{roomCode}/invite")
+    @Operation(
+        summary = "获取房间邀请链接",
+        description = "获取房间的邀请链接，私有房间需要有效的会话ID"
+    )
+    public ResponseEntity<ApiResp<String>> getInviteLink(
+            @PathVariable 
+            @Parameter(description = "房间码", example = "ABC123") 
             String roomCode,
             @SessionId(required = false)
             @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
@@ -116,58 +134,6 @@ public class RoomController {
         }
         
         Room room = roomOpt.get();
-        // Check if room is private and user has access
-        if (!room.getIsPublic() && sessionId == null) {
-            return new ResponseEntity<>(ApiResp.unauthorized("Access denied to private room"), HttpStatus.UNAUTHORIZED);
-        }
-        
-        RoomResp response = mapToRoomResponse(room);
-        return ResponseEntity.ok(ApiResp.success(response));
-    }
-
-    @DeleteMapping("/{roomId}")
-    @Operation(
-        summary = "删除房间",
-        description = "删除指定房间，需要房间所有者权限"
-    )
-    public ResponseEntity<ApiResp<Void>> deleteRoom(
-            @PathVariable 
-            @Parameter(description = "房间ID", example = "123") 
-            Long roomId,
-            @SessionId
-            @Parameter(description = "用户会话ID（必须为房间所有者）", example = "sess_abc123def456") 
-            String sessionId) {
-        
-
-        
-        boolean deleted = roomService.deleteRoom(roomId, sessionId);
-        if (!deleted) {
-            return new ResponseEntity<>(ApiResp.notFound("Room not found or access denied"), HttpStatus.NOT_FOUND);
-        }
-        
-        return ResponseEntity.ok(ApiResp.success("Room deleted successfully", null));
-    }
-
-    @GetMapping("/{roomId}/invite")
-    @Operation(
-        summary = "获取房间邀请链接",
-        description = "获取房间的邀请链接，私有房间需要有效的会话ID"
-    )
-    public ResponseEntity<ApiResp<String>> getInviteLink(
-            @PathVariable 
-            @Parameter(description = "房间ID", example = "123") 
-            Long roomId,
-            @SessionId(required = false)
-            @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
-            String sessionId) {
-        
-        Optional<Room> roomOpt = roomService.getRoomById(roomId);
-        if (roomOpt.isEmpty()) {
-            return new ResponseEntity<>(ApiResp.notFound("Room not found"), HttpStatus.NOT_FOUND);
-        }
-        
-        Room room = roomOpt.get();
-        // Only room owner or anyone with access can get invite link
         if (!room.getIsPublic() && sessionId == null) {
             return new ResponseEntity<>(ApiResp.unauthorized("Access denied"), HttpStatus.UNAUTHORIZED);
         }
@@ -176,15 +142,15 @@ public class RoomController {
         return ResponseEntity.ok(ApiResp.success(inviteLink));
     }
 
-    @GetMapping("/{roomId}/messages")
+    @GetMapping("/{roomCode}/messages")
     @Operation(
         summary = "获取聊天消息",
         description = "获取房间的聊天消息历史，支持分页"
     )
     public ResponseEntity<ApiResp<List<ChatMessageResp>>> getChatMessages(
             @PathVariable 
-            @Parameter(description = "房间ID", example = "123") 
-            Long roomId,
+            @Parameter(description = "房间码", example = "ABC123") 
+            String roomCode,
             @RequestParam(defaultValue = "0") 
             @Parameter(description = "页码（从0开始）", example = "0") 
             int page,
@@ -195,7 +161,7 @@ public class RoomController {
             @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
             String sessionId) {
         
-        Optional<Room> roomOpt = roomService.getRoomById(roomId);
+        Optional<Room> roomOpt = roomService.getRoomByCode(roomCode);
         if (roomOpt.isEmpty()) {
             return new ResponseEntity<>(ApiResp.notFound("Room not found"), HttpStatus.NOT_FOUND);
         }
@@ -205,13 +171,12 @@ public class RoomController {
             return new ResponseEntity<>(ApiResp.unauthorized("Access denied"), HttpStatus.UNAUTHORIZED);
         }
         
-        List<ChatMessageResp> messages = chatMessageService.getChatMessages(roomId, page, size);
+        List<ChatMessageResp> messages = chatMessageService.getChatMessages(room.getId(), page, size);
         return ResponseEntity.ok(ApiResp.success(messages));
     }
 
     private RoomResp mapToRoomResponse(Room room) {
         RoomResp response = new RoomResp();
-        response.setId(room.getId());
         response.setCode(room.getCode());
         response.setName(room.getName());
         response.setDescription(room.getDescription());

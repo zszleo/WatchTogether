@@ -8,5 +8,5 @@ import lombok.Data;
 public class LeaveRoomEvent {
 
     @Schema(description = "房间代码", example = "abc123")
-    private String roomId;
+    private String roomCode;
 }

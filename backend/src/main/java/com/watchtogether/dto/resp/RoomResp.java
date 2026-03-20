@@ -9,9 +9,6 @@ import lombok.Data;
 @Schema(description = "房间响应信息")
 public class RoomResp {
 
-    @Schema(description = "房间ID", example = "123")
-    private Long id;
-    
     @Schema(description = "房间邀请码", example = "ABC123")
     private String code;
     

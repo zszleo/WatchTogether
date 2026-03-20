@@ -22,15 +22,16 @@ public class SessionHistoryService {
     private SessionHistoryRepository historyRepository;
 
     @Transactional
-    public SessionHistory joinRoom(String sessionId, Long roomId, String roomName, String videoTitle) {
+    public SessionHistory joinRoom(String sessionId, Long roomId, String roomCode, String roomName, String videoTitle) {
         SessionHistory history = new SessionHistory();
         history.setSessionId(sessionId);
         history.setRoomId(roomId);
+        history.setRoomCode(roomCode);
         history.setRoomName(roomName);
         history.setVideoTitle(videoTitle);
 
         SessionHistory saved = historyRepository.save(history);
-        log.info("Session {} joined room {} (history id: {})", sessionId, roomId, saved.getId());
+        log.info("Session {} joined room {} (code: {}, history id: {})", sessionId, roomId, roomCode, saved.getId());
         return saved;
     }
 

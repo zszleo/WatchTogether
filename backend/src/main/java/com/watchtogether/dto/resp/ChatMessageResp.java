@@ -12,8 +12,8 @@ public class ChatMessageResp {
     @Schema(description = "消息ID", example = "1")
     private Long id;
     
-    @Schema(description = "房间ID", example = "123")
-    private Long roomId;
+    @Schema(description = "房间码", example = "ABC123")
+    private String roomCode;
     
     @Schema(description = "会话ID", example = "sess_abc123def456")
     private String sessionId;

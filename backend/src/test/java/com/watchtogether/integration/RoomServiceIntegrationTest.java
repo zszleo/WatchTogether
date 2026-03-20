@@ -156,7 +156,7 @@ class RoomServiceIntegrationTest {
         List<RoomResp> publicRooms = roomService.getPublicRooms();
 
         assertThat(publicRooms).hasSize(1);
-        assertEquals(publicRoom.getId(), publicRooms.get(0).getId());
+        assertEquals(publicRoom.getCode(), publicRooms.get(0).getCode());
         assertTrue(publicRooms.get(0).getIsPublic());
     }
 
@@ -176,9 +176,9 @@ class RoomServiceIntegrationTest {
         List<RoomResp> publicRooms = roomService.getPublicRooms();
 
         assertThat(publicRooms).hasSize(3);
-        assertEquals(room3.getId(), publicRooms.get(0).getId());
-        assertEquals(room2.getId(), publicRooms.get(1).getId());
-        assertEquals(room1.getId(), publicRooms.get(2).getId());
+        assertEquals(room3.getCode(), publicRooms.get(0).getCode());
+        assertEquals(room2.getCode(), publicRooms.get(1).getCode());
+        assertEquals(room1.getCode(), publicRooms.get(2).getCode());
     }
 
     @Test

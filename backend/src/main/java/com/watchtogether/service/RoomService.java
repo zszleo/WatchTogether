@@ -127,6 +127,33 @@ public class RoomService {
         return true;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public boolean deleteRoomByCode(String roomCode, String sessionId) {
+        Optional<Room> roomOpt = roomRepository.findByCode(roomCode);
+        if (roomOpt.isEmpty()) {
+            return false;
+        }
+        
+        Room room = roomOpt.get();
+        // Check ownership
+        if (!sessionId.equals(room.getOwnerSessionId())) {
+            log.warn("Session {} attempted to delete room {} owned by {}", 
+                       sessionId, roomCode, room.getOwnerSessionId());
+            return false;
+        }
+        
+        Long roomId = room.getId();
+        roomRepository.delete(room);
+        
+        // Clean up Redis cache
+        redisUtil.deleteRoom(roomId.toString());
+        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_USERS + roomId);
+        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_PLAYBACK + roomId);
+        
+        log.info("Deleted room: {} (code: {})", roomId, roomCode);
+        return true;
+    }
+
     public String generateInviteLink(String roomCode) {
         // In a real app, this would be a full URL
         // For now, return the room code as part of a path
@@ -275,7 +302,6 @@ public class RoomService {
 
     private RoomResp mapToRoomResponse(Room room) {
         RoomResp response = new RoomResp();
-        response.setId(room.getId());
         response.setCode(room.getCode());
         response.setName(room.getName());
         response.setDescription(room.getDescription());

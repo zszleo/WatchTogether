@@ -2,6 +2,7 @@ package com.watchtogether.controller;
 
 import com.watchtogether.dto.resp.ApiResp;
 import com.watchtogether.dto.resp.SessionResp;
+import com.watchtogether.dto.resp.SessionHistoryResp;
 import com.watchtogether.dto.req.CreateSessionReq;
 import com.watchtogether.dto.req.UpdateProfileReq;
 import com.watchtogether.model.Room;
@@ -60,6 +61,7 @@ class SessionControllerTest {
 
         mockRoom = new Room();
         mockRoom.setId(1L);
+        mockRoom.setCode("ABC123");
         mockRoom.setName("Test Room");
         mockRoom.setVideoTitle("Test Video");
 
@@ -67,6 +69,7 @@ class SessionControllerTest {
         mockHistory.setId(1L);
         mockHistory.setSessionId("session-123");
         mockHistory.setRoomId(1L);
+        mockHistory.setRoomCode("ABC123");
         mockHistory.setRoomName("Test Room");
         mockHistory.setVideoTitle("Test Video");
         mockHistory.setJoinedAt(LocalDateTime.now());
@@ -128,7 +131,7 @@ class SessionControllerTest {
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(historyService.getUserHistoryWithLimit(sessionId, 50)).thenReturn(histories);
 
-        ResponseEntity<ApiResp<List<SessionHistory>>> response = 
+        ResponseEntity<ApiResp<List<SessionHistoryResp>>> response = 
             sessionController.getHistory(sessionId, 50);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -142,7 +145,7 @@ class SessionControllerTest {
 
         when(sessionService.validateSession(sessionId)).thenReturn(false);
 
-        ResponseEntity<ApiResp<List<SessionHistory>>> response = 
+        ResponseEntity<ApiResp<List<SessionHistoryResp>>> response = 
             sessionController.getHistory(sessionId, 50);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -155,7 +158,7 @@ class SessionControllerTest {
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(historyService.getUserHistoryWithLimit(sessionId, 50)).thenReturn(List.of());
 
-        ResponseEntity<ApiResp<List<SessionHistory>>> response = 
+        ResponseEntity<ApiResp<List<SessionHistoryResp>>> response = 
             sessionController.getHistory(sessionId, 50);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -165,15 +168,15 @@ class SessionControllerTest {
     @Test
     void joinRoom_WithValidData_ShouldCreateHistory() {
         String sessionId = "session-123";
-        Long roomId = 1L;
+        String roomCode = "ABC123";
 
         when(sessionService.validateSession(sessionId)).thenReturn(true);
-        when(roomService.getRoomById(roomId)).thenReturn(Optional.of(mockRoom));
-        when(historyService.joinRoom(eq(sessionId), eq(roomId), any(), any()))
+        when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.of(mockRoom));
+        when(historyService.joinRoom(eq(sessionId), eq(1L), eq("ABC123"), any(), any()))
             .thenReturn(mockHistory);
 
-        ResponseEntity<ApiResp<SessionHistory>> response = 
-            sessionController.joinRoom(sessionId, roomId);
+        ResponseEntity<ApiResp<SessionHistoryResp>> response = 
+            sessionController.joinRoom(sessionId, roomCode);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -182,12 +185,12 @@ class SessionControllerTest {
     @Test
     void joinRoom_WithInvalidSession_ShouldReturnNotFound() {
         String sessionId = "invalid-session";
-        Long roomId = 1L;
+        String roomCode = "ABC123";
 
         when(sessionService.validateSession(sessionId)).thenReturn(false);
 
-        ResponseEntity<ApiResp<SessionHistory>> response = 
-            sessionController.joinRoom(sessionId, roomId);
+        ResponseEntity<ApiResp<SessionHistoryResp>> response = 
+            sessionController.joinRoom(sessionId, roomCode);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
@@ -195,13 +198,13 @@ class SessionControllerTest {
     @Test
     void joinRoom_WithNonExistentRoom_ShouldReturnNotFound() {
         String sessionId = "session-123";
-        Long roomId = 999L;
+        String roomCode = "NOTFND";
 
         when(sessionService.validateSession(sessionId)).thenReturn(true);
-        when(roomService.getRoomById(roomId)).thenReturn(Optional.empty());
+        when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.empty());
 
-        ResponseEntity<ApiResp<SessionHistory>> response = 
-            sessionController.joinRoom(sessionId, roomId);
+        ResponseEntity<ApiResp<SessionHistoryResp>> response = 
+            sessionController.joinRoom(sessionId, roomCode);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
@@ -440,7 +443,7 @@ class SessionControllerTest {
         when(historyService.getUserHistoryWithLimit(sessionId, 10)).thenReturn(histories);
 
         // Act
-        ResponseEntity<ApiResp<List<SessionHistory>>> response = 
+        ResponseEntity<ApiResp<List<SessionHistoryResp>>> response = 
             sessionController.getHistory(sessionId, 10);
 
         // Assert

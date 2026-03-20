@@ -2,7 +2,9 @@ package com.watchtogether.service;
 
 import com.watchtogether.dto.resp.ChatMessageResp;
 import com.watchtogether.model.ChatMessage;
+import com.watchtogether.model.Room;
 import com.watchtogether.repository.ChatMessageRepository;
+import com.watchtogether.repository.RoomRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,9 @@ public class ChatMessageService {
 
     @Resource
     private ChatMessageRepository chatMessageRepository;
+    
+    @Resource
+    private RoomRepository roomRepository;
 
     @Transactional(readOnly = true)
     public List<ChatMessageResp> getChatMessages(Long roomId, int page, int size) {
@@ -49,11 +54,16 @@ public class ChatMessageService {
     private ChatMessageResp mapToResponse(ChatMessage message) {
         ChatMessageResp resp = new ChatMessageResp();
         resp.setId(message.getId());
-        resp.setRoomId(message.getRoomId());
         resp.setSessionId(message.getSessionId());
         resp.setContent(message.getContent());
         resp.setMessageType(message.getMessageType());
         resp.setCreatedAt(message.getCreatedAt());
+        
+        // Get room code from roomId
+        roomRepository.findById(message.getRoomId()).ifPresent(room -> {
+            resp.setRoomCode(room.getCode());
+        });
+        
         return resp;
     }
 }

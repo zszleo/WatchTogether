@@ -8,7 +8,7 @@ import lombok.Data;
 public class JoinRoomEvent {
 
     @Schema(description = "房间代码", example = "abc123")
-    private String roomId;
+    private String roomCode;
 
     @Schema(description = "会话ID", example = "sess_abc123def456")
     private String sessionId;

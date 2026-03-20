@@ -125,7 +125,7 @@ class SocketEventHandlerTest {
     @Test
     void onJoinRoom_WithValidData_ShouldJoinRoom() {
         JoinRoomEvent joinData = new JoinRoomEvent();
-        joinData.setRoomId(roomCode);
+        joinData.setRoomCode(roomCode);
         joinData.setSessionId(sessionId);
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.of(mockRoom));
@@ -150,7 +150,7 @@ class SocketEventHandlerTest {
     @Test
     void onJoinRoom_WithInvalidSession_ShouldNotJoin() {
         JoinRoomEvent joinData = new JoinRoomEvent();
-        joinData.setRoomId(roomCode);
+        joinData.setRoomCode(roomCode);
         joinData.setSessionId(sessionId);
         when(sessionService.validateSession(sessionId)).thenReturn(false);
         socketEventHandler.onJoinRoom(client, joinData, ackRequest);
@@ -160,7 +160,7 @@ class SocketEventHandlerTest {
     @Test
     void onJoinRoom_WithNonExistentRoom_ShouldNotJoin() {
         JoinRoomEvent joinData = new JoinRoomEvent();
-        joinData.setRoomId(roomCode);
+        joinData.setRoomCode(roomCode);
         joinData.setSessionId(sessionId);
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.empty());
@@ -171,7 +171,7 @@ class SocketEventHandlerTest {
     @Test
     void onLeaveRoom_WithValidRoomMembership_ShouldLeaveRoom() {
         LeaveRoomEvent leaveData = new LeaveRoomEvent();
-        leaveData.setRoomId(roomCode);
+        leaveData.setRoomCode(roomCode);
         Map<String, String> socketMapping = new HashMap<>();
         socketMapping.put("roomCode", roomCode);
         socketMapping.put("roomId", roomId.toString());
@@ -188,7 +188,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoPlay_WithValidRoom_ShouldBroadcastPlayEvent() {
         VideoPlayEvent playData = new VideoPlayEvent();
-        playData.setRoomId(roomCode);
+        playData.setRoomCode(roomCode);
         playData.setTime(30.5);
 
         socketEventHandler.onVideoPlay(client, playData, ackRequest);
@@ -200,7 +200,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoPause_WithValidRoom_ShouldBroadcastPauseEvent() {
         VideoPauseEvent pauseData = new VideoPauseEvent();
-        pauseData.setRoomId(roomCode);
+        pauseData.setRoomCode(roomCode);
 
         socketEventHandler.onVideoPause(client, pauseData, ackRequest);
 
@@ -211,7 +211,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoSeek_WithValidRoom_ShouldBroadcastSeekEvent() {
         VideoSeekEvent seekData = new VideoSeekEvent();
-        seekData.setRoomId(roomCode);
+        seekData.setRoomCode(roomCode);
         seekData.setTime(45.2);
 
         socketEventHandler.onVideoSeek(client, seekData, ackRequest);
@@ -223,7 +223,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoUrlChange_WithValidData_ShouldBroadcast() {
         VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
-        urlData.setRoomId(roomCode);
+        urlData.setRoomCode(roomCode);
         urlData.setUrl("https://new-video.com/video.mp4");
 
         socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
@@ -235,7 +235,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoUrlChange_WithEmptyRoomId_ShouldNotBroadcast() {
         VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
-        urlData.setRoomId("");
+        urlData.setRoomCode("");
         urlData.setUrl("https://video.com/video.mp4");
 
         socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
@@ -246,7 +246,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoUrlChange_WithNullUrl_ShouldNotBroadcast() {
         VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
-        urlData.setRoomId(roomCode);
+        urlData.setRoomCode(roomCode);
         urlData.setUrl(null);
 
         socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
@@ -257,7 +257,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithValidRoom_ShouldSaveAndBroadcast() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId("1");
+        messageData.setRoomCode("1");
         messageData.setMessage("Hello World");
         messageData.setSender("testUser");
         
@@ -278,7 +278,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithNullRoomId_ShouldNotProcess() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId(null);
+        messageData.setRoomCode(null);
         messageData.setMessage("Hello");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
         verify(chatMessageRepository, never()).save(any());
@@ -287,7 +287,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithEmptyMessage_ShouldNotProcess() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId("1");
+        messageData.setRoomCode("1");
         messageData.setMessage("");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
         verify(chatMessageRepository, never()).save(any());
@@ -296,7 +296,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithTooLongMessage_ShouldNotProcess() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId("1");
+        messageData.setRoomCode("1");
         messageData.setMessage("a".repeat(1001));
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
         verify(chatMessageRepository, never()).save(any());
@@ -305,7 +305,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithInvalidRoomIdFormat_ShouldNotProcess() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId("invalid-id");
+        messageData.setRoomCode("invalid-id");
         messageData.setMessage("Hello");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
         verify(chatMessageRepository, never()).save(any());
@@ -314,7 +314,7 @@ class SocketEventHandlerTest {
     @Test
     void onChatMessage_WithDatabaseError_ShouldHandleGracefully() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId("1");
+        messageData.setRoomCode("1");
         messageData.setMessage("Hello");
         when(chatMessageRepository.save(any())).thenThrow(new RuntimeException("DB error"));
         assertDoesNotThrow(() -> socketEventHandler.onChatMessage(client, messageData, ackRequest));
@@ -323,7 +323,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoPlay_WithEmptyRoomId_ShouldNotBroadcast() {
         VideoPlayEvent playData = new VideoPlayEvent();
-        playData.setRoomId("");
+        playData.setRoomCode("");
         playData.setTime(30.5);
         socketEventHandler.onVideoPlay(client, playData, ackRequest);
         verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));
@@ -332,7 +332,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoPause_WithEmptyRoomId_ShouldNotBroadcast() {
         VideoPauseEvent pauseData = new VideoPauseEvent();
-        pauseData.setRoomId("");
+        pauseData.setRoomCode("");
         socketEventHandler.onVideoPause(client, pauseData, ackRequest);
         verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));
     }
@@ -340,7 +340,7 @@ class SocketEventHandlerTest {
     @Test
     void onVideoSeek_WithEmptyRoomId_ShouldNotBroadcast() {
         VideoSeekEvent seekData = new VideoSeekEvent();
-        seekData.setRoomId("");
+        seekData.setRoomCode("");
         seekData.setTime(45.2);
         socketEventHandler.onVideoSeek(client, seekData, ackRequest);
         verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));

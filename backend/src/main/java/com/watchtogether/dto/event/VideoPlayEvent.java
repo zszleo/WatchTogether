@@ -8,7 +8,7 @@ import lombok.Data;
 public class VideoPlayEvent {
 
     @Schema(description = "房间代码", example = "abc123")
-    private String roomId;
+    private String roomCode;
 
     @Schema(description = "播放时间（秒）", example = "120.5")
     private Double time;

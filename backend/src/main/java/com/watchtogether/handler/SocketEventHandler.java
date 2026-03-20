@@ -124,7 +124,7 @@ public class SocketEventHandler {
     @Transactional
     public void onJoinRoom(SocketIOClient client, JoinRoomEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomCode = data.getRoomId();
+        String roomCode = data.getRoomCode();
         String sessionId = data.getSessionId();
         
         log.info("Client {} joining room {} with session {}", socketId, roomCode, sessionId);
@@ -228,7 +228,7 @@ public class SocketEventHandler {
     @Transactional
     public void onLeaveRoom(SocketIOClient client, LeaveRoomEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomCode = data.getRoomId();
+        String roomCode = data.getRoomCode();
         
         log.info("Client {} leaving room {}", socketId, roomCode);
         
@@ -302,19 +302,19 @@ public class SocketEventHandler {
     @OnEvent("video:play")
     public void onVideoPlay(SocketIOClient client, VideoPlayEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomId = data.getRoomId();
+        String roomCode = data.getRoomCode();
         Double time = data.getTime();
         
-        log.info("Video play in room {} at time {} from client {}", roomId, time, socketId);
+        log.info("Video play in room {} at time {} from client {}", roomCode, time, socketId);
         
-        if (roomId != null && !roomId.trim().isEmpty()) {
+        if (roomCode != null && !roomCode.trim().isEmpty()) {
             // Store playback state in Redis
             Map<String, Object> playbackState = new HashMap<>();
             playbackState.put("playing", true);
             playbackState.put("time", time != null ? time : 0.0);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomId, playbackState);
+            redisUtil.setRoomPlayback(roomCode, playbackState);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -324,7 +324,7 @@ public class SocketEventHandler {
             syncEvent.put("timestamp", System.currentTimeMillis());
             
             // Use socketServer to broadcast to room, excluding sender
-            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+            socketServer.getRoomOperations(roomCode).getClients().forEach(c -> {
                 if (!c.getSessionId().equals(client.getSessionId())) {
                     c.sendEvent("video:sync-play", syncEvent);
                 }
@@ -341,17 +341,17 @@ public class SocketEventHandler {
     @OnEvent("video:pause")
     public void onVideoPause(SocketIOClient client, VideoPauseEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomId = data.getRoomId();
+        String roomCode = data.getRoomCode();
         
-        log.info("Video pause in room {} from client {}", roomId, socketId);
+        log.info("Video pause in room {} from client {}", roomCode, socketId);
         
-        if (roomId != null && !roomId.trim().isEmpty()) {
+        if (roomCode != null && !roomCode.trim().isEmpty()) {
             // Store playback state in Redis
             Map<String, Object> playbackState = new HashMap<>();
             playbackState.put("playing", false);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomId, playbackState);
+            redisUtil.setRoomPlayback(roomCode, playbackState);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -359,7 +359,7 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+            socketServer.getRoomOperations(roomCode).getClients().forEach(c -> {
                 if (!c.getSessionId().equals(client.getSessionId())) {
                     c.sendEvent("video:sync-pause", syncEvent);
                 }
@@ -376,18 +376,18 @@ public class SocketEventHandler {
     @OnEvent("video:seek")
     public void onVideoSeek(SocketIOClient client, VideoSeekEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomId = data.getRoomId();
+        String roomCode = data.getRoomCode();
         Double time = data.getTime();
         
-        log.info("Video seek in room {} to time {} from client {}", roomId, time, socketId);
+        log.info("Video seek in room {} to time {} from client {}", roomCode, time, socketId);
         
-        if (roomId != null && !roomId.trim().isEmpty() && time != null) {
+        if (roomCode != null && !roomCode.trim().isEmpty() && time != null) {
             // Update playback state in Redis
             Map<String, Object> playbackState = new HashMap<>();
             playbackState.put("time", time);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomId, playbackState);
+            redisUtil.setRoomPlayback(roomCode, playbackState);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -395,7 +395,7 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+            socketServer.getRoomOperations(roomCode).getClients().forEach(c -> {
                 if (!c.getSessionId().equals(client.getSessionId())) {
                     c.sendEvent("video:sync-seek", syncEvent);
                 }
@@ -412,18 +412,18 @@ public class SocketEventHandler {
     @OnEvent("video:url-change")
     public void onVideoUrlChange(SocketIOClient client, VideoUrlChangeEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomId = data.getRoomId();
+        String roomCode = data.getRoomCode();
         String url = data.getUrl();
         
-        log.info("Video URL change in room {} to {} from client {}", roomId, url, socketId);
+        log.info("Video URL change in room {} to {} from client {}", roomCode, url, socketId);
         
-        if (roomId != null && !roomId.trim().isEmpty() && url != null) {
+        if (roomCode != null && !roomCode.trim().isEmpty() && url != null) {
             // Store room video URL in Redis
             Map<String, Object> roomData = new HashMap<>();
             roomData.put("videoUrl", url);
             roomData.put("updatedBy", socketId);
             roomData.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoom(roomId, roomData);
+            redisUtil.setRoom(roomCode, roomData);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -431,7 +431,7 @@ public class SocketEventHandler {
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            socketServer.getRoomOperations(roomId).getClients().forEach(c -> {
+            socketServer.getRoomOperations(roomCode).getClients().forEach(c -> {
                 if (!c.getSessionId().equals(client.getSessionId())) {
                     c.sendEvent("video:sync-url-change", syncEvent);
                 }
@@ -448,13 +448,13 @@ public class SocketEventHandler {
     @OnEvent("chat:message")
     public void onChatMessage(SocketIOClient client, ChatMessageEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
-        String roomId = data.getRoomId();
+        String roomCode = data.getRoomCode();
         String message = data.getMessage();
         String sender = data.getSender();
         
-        log.info("Chat message in room {} from {}: {}", roomId, sender, message);
+        log.info("Chat message in room {} from {}: {}", roomCode, sender, message);
         
-        if (roomId == null || roomId.trim().isEmpty()) {
+        if (roomCode == null || roomCode.trim().isEmpty()) {
             sendAckError(ackSender, "Room ID is required");
             return;
         }
@@ -471,7 +471,7 @@ public class SocketEventHandler {
         
         try {
             // Find room by code to get roomId
-            Optional<Room> roomOpt = roomService.getRoomByCode(roomId);
+            Optional<Room> roomOpt = roomService.getRoomByCode(roomCode);
             if (roomOpt.isEmpty()) {
                 sendAckError(ackSender, "Room not found");
                 return;
@@ -492,7 +492,7 @@ public class SocketEventHandler {
             chatEvent.put("socketId", socketId);
             chatEvent.put("timestamp", chatMessage.getCreatedAt() != null ? chatMessage.getCreatedAt().toString() : null);
             
-            socketServer.getRoomOperations(roomId).sendEvent("chat:message", chatEvent);
+            socketServer.getRoomOperations(roomCode).sendEvent("chat:message", chatEvent);
             
             sendAckSuccess(ackSender, new HashMap<>());
         } catch (Exception e) {

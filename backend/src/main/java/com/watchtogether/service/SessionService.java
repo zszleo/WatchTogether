@@ -135,6 +135,7 @@ public class SessionService {
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void deleteSession(String sessionId) {
         sessionRepository.deleteById(sessionId);
+        // todo 删除房间关联等相关数据
         redisUtil.deleteSession(sessionId);
         log.info("Deleted session: {}", sessionId);
     }

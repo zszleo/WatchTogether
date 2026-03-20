@@ -8,7 +8,7 @@ import lombok.Data;
 public class VideoUrlChangeEvent {
 
     @Schema(description = "房间代码", example = "abc123")
-    private String roomId;
+    private String roomCode;
 
     @Schema(description = "视频URL", example = "https://example.com/video.mp4")
     private String url;

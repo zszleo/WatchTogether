@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.watchtogether.config.SocketIOStartup;
 import com.watchtogether.dto.req.CreateRoomReq;
-import com.watchtogether.dto.resp.ApiResp;
 import com.watchtogether.dto.resp.RoomResp;
 import com.watchtogether.model.Room;
 import com.watchtogether.service.RoomService;
@@ -82,7 +81,6 @@ class RoomControllerTest {
         mockRoom.setLastActivityAt(LocalDateTime.now());
 
         mockRoomResponse = new RoomResp();
-        mockRoomResponse.setId(1L);
         mockRoomResponse.setCode("ABC123");
         mockRoomResponse.setName("Test Room");
         mockRoomResponse.setDescription("Test Description");

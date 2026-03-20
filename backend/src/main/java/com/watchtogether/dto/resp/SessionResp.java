@@ -20,8 +20,8 @@ public class SessionResp {
     @Schema(description = "是否在线", example = "true")
     private Boolean isOnline;
     
-    @Schema(description = "当前所在房间ID", example = "123")
-    private Long roomId;
+    @Schema(description = "当前所在房间码", example = "ABC123")
+    private String roomCode;
     
     @Schema(description = "创建时间", example = "2026-03-06T11:30:00")
     private LocalDateTime createdAt;

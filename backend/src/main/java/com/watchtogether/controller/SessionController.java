@@ -3,6 +3,7 @@ package com.watchtogether.controller;
 import com.watchtogether.dto.req.CreateSessionReq;
 import com.watchtogether.dto.req.UpdateProfileReq;
 import com.watchtogether.dto.resp.ApiResp;
+import com.watchtogether.dto.resp.SessionHistoryResp;
 import com.watchtogether.dto.resp.SessionResp;
 import com.watchtogether.model.Session;
 import com.watchtogether.model.SessionHistory;
@@ -18,6 +19,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -54,7 +56,7 @@ public class SessionController {
             session.getNickname(),
             session.getAvatar(),
             session.getIsOnline(),
-            session.getRoomId(),
+            getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()
         );
@@ -84,14 +86,14 @@ public class SessionController {
             session.getNickname(),
             session.getAvatar(),
             session.getIsOnline(),
-            session.getRoomId(),
+            getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()
         );
         
         return ResponseEntity.ok(ApiResp.success(response));
     }
-
+    
     @DeleteMapping("/{sessionId}")
     @Operation(
         summary = "删除会话",
@@ -157,20 +159,32 @@ public class SessionController {
             session.getNickname(),
             session.getAvatar(),
             session.getIsOnline(),
-            session.getRoomId(),
+            getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()
         );
         
         return ResponseEntity.ok(ApiResp.success(response));
     }
-
+    
+    private SessionHistoryResp convertToResp(SessionHistory history) {
+        SessionHistoryResp resp = new SessionHistoryResp();
+        resp.setId(history.getId());
+        resp.setSessionId(history.getSessionId());
+        resp.setRoomCode(history.getRoomCode());
+        resp.setRoomName(history.getRoomName());
+        resp.setVideoTitle(history.getVideoTitle());
+        resp.setJoinedAt(history.getJoinedAt());
+        resp.setLeftAt(history.getLeftAt());
+        return resp;
+    }
+    
     @GetMapping("/{sessionId}/history")
     @Operation(
         summary = "获取用户历史记录",
         description = "获取用户的房间加入历史记录"
     )
-    public ResponseEntity<ApiResp<List<SessionHistory>>> getHistory(
+    public ResponseEntity<ApiResp<List<SessionHistoryResp>>> getHistory(
             @PathVariable 
             @Parameter(description = "会话ID", example = "sess_abc123def456") 
             String sessionId,
@@ -183,42 +197,47 @@ public class SessionController {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
         }
         
-        List<SessionHistory> history = historyService.getUserHistoryWithLimit(sessionId, limit);
-        return ResponseEntity.ok(ApiResp.success(history));
+        List<SessionHistoryResp> respList = historyService.getUserHistoryWithLimit(sessionId, limit)
+                .stream()
+                .map(this::convertToResp)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResp.success(respList));
     }
 
-    @PostMapping("/{sessionId}/history/join/{roomId}")
+    @PostMapping("/{sessionId}/history/join/{roomCode}")
     @Operation(
         summary = "加入房间历史记录",
         description = "记录用户加入房间的历史"
     )
-    public ResponseEntity<ApiResp<SessionHistory>> joinRoom(
+    public ResponseEntity<ApiResp<SessionHistoryResp>> joinRoom(
             @PathVariable 
             @Parameter(description = "会话ID", example = "sess_abc123def456") 
             String sessionId,
             @PathVariable 
-            @Parameter(description = "房间ID", example = "123") 
-            Long roomId) {
-        log.info("joinRoom called with sessionId: {}, roomId: {}", sessionId, roomId);
+            @Parameter(description = "房间码", example = "ABC123") 
+            String roomCode) {
+        log.info("joinRoom called with sessionId: {}, roomCode: {}", sessionId, roomCode);
         
         if (!sessionService.validateSession(sessionId)) {
             return new ResponseEntity<>(ApiResp.notFound("Session not found"), HttpStatus.NOT_FOUND);
         }
         
-        var roomOpt = roomService.getRoomById(roomId);
+        var roomOpt = roomService.getRoomByCode(roomCode);
         if (roomOpt.isEmpty()) {
             return new ResponseEntity<>(ApiResp.notFound("Room not found"), HttpStatus.NOT_FOUND);
         }
         
         var room = roomOpt.get();
+        
         SessionHistory history = historyService.joinRoom(
             sessionId, 
-            roomId, 
+            room.getId(),
+            room.getCode(),
             room.getName(), 
             room.getVideoTitle()
         );
-        
-        return new ResponseEntity<>(ApiResp.created(history), HttpStatus.CREATED);
+        SessionHistoryResp resp = convertToResp(history);
+        return new ResponseEntity<>(ApiResp.created(resp), HttpStatus.CREATED);
     }
 
     @PostMapping("/{sessionId}/history/{historyId}/leave")
@@ -241,5 +260,14 @@ public class SessionController {
         
         historyService.leaveRoom(historyId);
         return ResponseEntity.ok(ApiResp.success("Left room successfully", null));
+    }
+    
+    private String getRoomCode(Long roomId) {
+        if (roomId == null) {
+            return null;
+        }
+        return roomService.getRoomById(roomId)
+            .map(room -> room.getCode())
+            .orElse(null);
     }
 }

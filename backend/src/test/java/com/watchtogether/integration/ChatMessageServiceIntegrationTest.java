@@ -211,7 +211,7 @@ class ChatMessageServiceIntegrationTest {
         assertThat(messages).hasSize(1);
         ChatMessageResp resp = messages.get(0);
         assertEquals(saved.getId(), resp.getId());
-        assertEquals(roomId, resp.getRoomId());
+        assertEquals(roomId, resp.getRoomCode());
         assertEquals(sessionId, resp.getSessionId());
         assertEquals("Test content", resp.getContent());
         assertEquals("emoji", resp.getMessageType());

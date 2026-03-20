@@ -1,5 +1,7 @@
 package com.watchtogether.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -17,8 +19,12 @@ public class SessionHistory {
     @Column(name = "session_id", nullable = false, length = 32)
     private String sessionId;
 
+    @JsonIgnore
     @Column(name = "room_id", nullable = false)
     private Long roomId;
+
+    @Column(name = "room_code", nullable = false, length = 10)
+    private String roomCode;
 
     @Column(name = "room_name", length = 100)
     private String roomName;

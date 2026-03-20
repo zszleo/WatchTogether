@@ -8,7 +8,7 @@ import lombok.Data;
 public class ChatMessageEvent {
 
     @Schema(description = "房间代码", example = "abc123")
-    private String roomId;
+    private String roomCode;
 
     @Schema(description = "消息内容", example = "大家好！")
     private String message;

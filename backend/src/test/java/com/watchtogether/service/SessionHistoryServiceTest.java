@@ -60,6 +60,7 @@ class SessionHistoryServiceTest {
     void joinRoom_WithValidData_ShouldCreateHistory() {
         String sessionId = "session-123";
         Long roomId = 1L;
+        String roomCode = "ROO123";
         String roomName = "Test Room";
         String videoTitle = "Test Video";
 
@@ -69,11 +70,12 @@ class SessionHistoryServiceTest {
             return h;
         });
 
-        SessionHistory result = historyService.joinRoom(sessionId, roomId, roomName, videoTitle);
+        SessionHistory result = historyService.joinRoom(sessionId, roomId, roomCode, roomName, videoTitle);
 
         assertNotNull(result);
         assertEquals(sessionId, result.getSessionId());
         assertEquals(roomId, result.getRoomId());
+        assertEquals(roomCode, result.getRoomCode());
         assertEquals(roomName, result.getRoomName());
         assertEquals(videoTitle, result.getVideoTitle());
 
@@ -87,6 +89,7 @@ class SessionHistoryServiceTest {
     void joinRoom_WithNullVideoTitle_ShouldSaveSuccessfully() {
         String sessionId = "session-123";
         Long roomId = 1L;
+        String roomCode = "ROO123";
         String roomName = "Test Room";
 
         when(historyRepository.save(any(SessionHistory.class))).thenAnswer(inv -> {
@@ -95,7 +98,7 @@ class SessionHistoryServiceTest {
             return h;
         });
 
-        SessionHistory result = historyService.joinRoom(sessionId, roomId, roomName, null);
+        SessionHistory result = historyService.joinRoom(sessionId, roomId, roomCode, roomName, null);
 
         assertNotNull(result);
         assertNull(result.getVideoTitle());

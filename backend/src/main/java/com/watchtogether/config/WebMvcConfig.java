@@ -5,6 +5,7 @@ import com.watchtogether.resolver.CurrentSessionArgumentResolver;
 import com.watchtogether.resolver.SessionIdArgumentResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -36,5 +37,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(sessionValidationInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/session", "/api/health", "/api/session/{sessionId}/validate");
+    }
+    
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
