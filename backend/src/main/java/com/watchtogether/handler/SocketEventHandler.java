@@ -446,7 +446,7 @@ public class SocketEventHandler {
         }
     }
     
-    private void sendAckError(AckRequest ackSender, String message) {
+    public void sendAckError(AckRequest ackSender, String message) {
         if (ackSender.isAckRequested()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
@@ -455,7 +455,7 @@ public class SocketEventHandler {
         }
     }
     
-    private void sendAckSuccess(AckRequest ackSender, Map<String, Object> data) {
+    public void sendAckSuccess(AckRequest ackSender, Map<String, Object> data) {
         if (ackSender.isAckRequested()) {
             Map<String, Object> response = new HashMap<>(data);
             response.put("success", true);
@@ -463,7 +463,7 @@ public class SocketEventHandler {
         }
     }
     
-    private void addUserToRoom(String roomId, String sessionId, String socketId) {
+    public void addUserToRoom(String roomId, String sessionId, String socketId) {
         // Get current users set from Redis
         Object usersObj = redisUtil.getRoomUsers(roomId);
         Map<String, Object> usersData = null;
@@ -486,7 +486,7 @@ public class SocketEventHandler {
         redisUtil.setRoomUsers(roomId, usersData);
     }
     
-    private void removeUserFromRoom(String roomId, String sessionId) {
+    public void removeUserFromRoom(String roomId, String sessionId) {
         Object usersObj = redisUtil.getRoomUsers(roomId);
         if (usersObj instanceof Map) {
             Map<String, Object> usersData = (Map<String, Object>) usersObj;
@@ -495,7 +495,7 @@ public class SocketEventHandler {
         }
     }
     
-    private void sendRoomState(SocketIOClient client, Room room, String roomCode) {
+    public void sendRoomState(SocketIOClient client, Room room, String roomCode) {
         Map<String, Object> roomState = new HashMap<>();
         roomState.put("roomId", room.getId());
         roomState.put("code", room.getCode());

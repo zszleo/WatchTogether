@@ -336,35 +336,177 @@ class RoomServiceTest {
     }
 
     @Test
-    void getOnlineUserCount_ShouldReturnPlaceholder() {
-        // Act
+    void getOnlineUserCount_WithUsersInRedis_ShouldReturnCount() {
+        Map<String, Object> usersData = new HashMap<>();
+        usersData.put("session-1", Map.of("sessionId", "session-1", "socketId", "socket-1"));
+        usersData.put("session-2", Map.of("sessionId", "session-2", "socketId", "socket-2"));
+        usersData.put("session-3", Map.of("sessionId", "session-3", "socketId", "socket-3"));
+        when(redisUtil.getRoomUsers("1")).thenReturn(usersData);
+
         Integer count = roomService.getOnlineUserCount(1L);
 
-        // Assert
+        assertEquals(3, count);
+    }
+
+    @Test
+    void getOnlineUserCount_WithNoUsersInRedis_ShouldReturnZero() {
+        when(redisUtil.getRoomUsers("1")).thenReturn(null);
+
+        Integer count = roomService.getOnlineUserCount(1L);
+
         assertEquals(0, count);
     }
 
     @Test
-    void mapToRoom_ShouldConvertMapToRoomObject() {
-        // Arrange
-        Map<String, Object> data = new HashMap<>();
-        data.put("id", "1");
-        data.put("code", "ABC123");
-        data.put("name", "Test Room");
-        data.put("description", "Test Description");
-        data.put("maxUsers", "10");
-        data.put("isPublic", "true");
-        data.put("ownerSessionId", ownerSessionId);
-        data.put("videoUrl", "https://example.com/video.mp4");
-        data.put("videoTitle", "Test Video");
-        data.put("videoDuration", "120");
-        data.put("currentPlaybackTime", "30.5");
-        data.put("isPlaying", "true");
+    void getOnlineUserCount_WithNonMapData_ShouldReturnZero() {
+        when(redisUtil.getRoomUsers("1")).thenReturn("invalid-data");
 
-        // This is a private method, but we can test it indirectly through public methods
-        // For now, we'll test the behavior through getRoomById
+        Integer count = roomService.getOnlineUserCount(1L);
+
+        assertEquals(0, count);
+    }
+
+    @Test
+    void getOnlineUserCount_WithRedisException_ShouldReturnZero() {
+        when(redisUtil.getRoomUsers("1")).thenThrow(new RuntimeException("Redis error"));
+
+        Integer count = roomService.getOnlineUserCount(1L);
+
+        assertEquals(0, count);
+    }
+
+    @Test
+    void getRoomById_WithCachedData_ShouldMapCorrectly() {
+        Map<String, Object> cachedData = new HashMap<>();
+        cachedData.put("id", "1");
+        cachedData.put("code", "ABC123");
+        cachedData.put("name", "Cached Room");
+        cachedData.put("description", "Test Description");
+        cachedData.put("maxUsers", "10");
+        cachedData.put("isPublic", "true");
+        cachedData.put("ownerSessionId", ownerSessionId);
+        cachedData.put("videoUrl", "https://example.com/video.mp4");
+        cachedData.put("videoTitle", "Test Video");
+        cachedData.put("videoDuration", "120");
+        cachedData.put("currentPlaybackTime", "30.5");
+        cachedData.put("isPlaying", "true");
         
-        // Alternative: Use reflection to test private method or rely on integration tests
-        // Since it's a private method, we'll test through the public API
+        when(redisUtil.getRoom(eq("1"), eq(Map.class))).thenReturn(cachedData);
+
+        Optional<Room> result = roomService.getRoomById(1L);
+
+        assertTrue(result.isPresent());
+        Room room = result.get();
+        assertEquals(1L, room.getId());
+        assertEquals("ABC123", room.getCode());
+        assertEquals("Cached Room", room.getName());
+        assertEquals(10, room.getMaxUsers());
+        assertTrue(room.getIsPublic());
+        assertEquals(120, room.getVideoDuration());
+        assertEquals(30.5, room.getCurrentPlaybackTime());
+        assertTrue(room.getIsPlaying());
+    }
+
+    @Test
+    void getRoomById_WithNullValuesInCache_ShouldUseDefaults() {
+        Map<String, Object> cachedData = new HashMap<>();
+        cachedData.put("id", "1");
+        cachedData.put("code", "ABC123");
+        cachedData.put("name", "Minimal Room");
+        
+        when(redisUtil.getRoom(eq("1"), eq(Map.class))).thenReturn(cachedData);
+
+        Optional<Room> result = roomService.getRoomById(1L);
+
+        assertTrue(result.isPresent());
+        Room room = result.get();
+        assertEquals(5, room.getMaxUsers());
+        assertTrue(room.getIsPublic());
+        assertNull(room.getDescription());
+        assertNull(room.getVideoUrl());
+    }
+
+    @Test
+    void getRoomById_WithCachedDataMissingId_ShouldThrowException() {
+        Map<String, Object> cachedData = new HashMap<>();
+        cachedData.put("code", "ABC123");
+        cachedData.put("name", "Test Room");
+        when(redisUtil.getRoom(eq("1"), eq(Map.class))).thenReturn(cachedData);
+
+        assertThrows(Exception.class, () -> roomService.getRoomById(1L));
+    }
+
+    @Test
+    void updateRoomActivity_WithNullRedis_ShouldNotThrow() {
+        when(redisUtil.getRoom(eq("1"), eq(Map.class))).thenReturn(null);
+
+        assertDoesNotThrow(() -> roomService.updateRoomActivity(1L));
+        verify(roomRepository).updateLastActivity(eq(1L), any(LocalDateTime.class));
+    }
+
+    @Test
+    void updateRoomActivity_WithRedisException_ShouldLogWarning() {
+        when(redisUtil.getRoom(eq("1"), eq(Map.class))).thenThrow(new RuntimeException("Redis error"));
+
+        assertDoesNotThrow(() -> roomService.updateRoomActivity(1L));
+        verify(roomRepository).updateLastActivity(eq(1L), any(LocalDateTime.class));
+    }
+
+    @Test
+    void updateVideoInfo_WithNonExistentRoom_ShouldNotCache() {
+        when(roomRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> roomService.updateVideoInfo(1L, "url", "title", 100));
+        verify(roomRepository).updateVideoInfo(eq(1L), eq("url"), eq("title"), eq(100));
+        verify(redisUtil, never()).setRoom(anyString(), any(Map.class));
+    }
+
+    @Test
+    void createRoom_WithException_ShouldRethrow() {
+        when(roomRepository.findByCode(anyString())).thenReturn(Optional.empty());
+        when(roomRepository.save(any(Room.class))).thenThrow(new RuntimeException("DB error"));
+
+        assertThrows(RuntimeException.class, () -> roomService.createRoom(createRoomRequest, ownerSessionId));
+    }
+
+    @Test
+    void createRoom_ShouldSetAllFields() {
+        when(roomRepository.findByCode(anyString())).thenReturn(Optional.empty());
+        when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> {
+            Room room = invocation.getArgument(0);
+            room.setId(1L);
+            return room;
+        });
+
+        Room result = roomService.createRoom(createRoomRequest, ownerSessionId);
+
+        assertNotNull(result.getCode());
+        assertEquals(6, result.getCode().length());
+        assertEquals("Test Room", result.getName());
+        assertEquals("Test Description", result.getDescription());
+        assertEquals(10, result.getMaxUsers());
+        assertTrue(result.getIsPublic());
+        assertEquals(ownerSessionId, result.getOwnerSessionId());
+        assertEquals("https://example.com/video.mp4", result.getVideoUrl());
+        assertEquals("Test Video", result.getVideoTitle());
+    }
+
+    @Test
+    void cacheRoom_ShouldStoreAllFieldsInRedis() {
+        when(roomRepository.findByCode(anyString())).thenReturn(Optional.empty());
+        when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> {
+            Room room = invocation.getArgument(0);
+            room.setId(1L);
+            return room;
+        });
+
+        Room result = roomService.createRoom(createRoomRequest, ownerSessionId);
+
+        verify(redisUtil).setRoom(eq("1"), redisCaptor.capture());
+        Map<String, Object> cached = redisCaptor.getValue();
+        assertEquals(result.getCode(), cached.get("code"));
+        assertEquals("Test Room", cached.get("name"));
+        assertEquals(10, cached.get("maxUsers"));
+        assertTrue((Boolean) cached.get("isPublic"));
     }
 }

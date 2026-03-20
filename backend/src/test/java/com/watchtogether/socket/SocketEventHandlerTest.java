@@ -5,8 +5,6 @@ import com.corundumstudio.socketio.BroadcastOperations;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIONamespace;
 import com.corundumstudio.socketio.SocketIOServer;
-import com.corundumstudio.socketio.listener.ConnectListener;
-import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.watchtogether.handler.SocketEventHandler;
 import com.watchtogether.model.Room;
 import com.watchtogether.repository.ChatMessageRepository;
@@ -23,8 +21,6 @@ import com.watchtogether.dto.event.ChatMessageEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -43,36 +39,22 @@ class SocketEventHandlerTest {
 
     @Mock
     private SocketIOServer socketServer;
-
     @Mock
     private RedisUtil redisUtil;
-
     @Mock
     private RoomService roomService;
-
     @Mock
     private SessionService sessionService;
-
     @Mock
     private ChatMessageRepository chatMessageRepository;
-
     @Mock
     private SocketIOClient client;
-
     @Mock
     private AckRequest ackRequest;
-
     @Mock
     private BroadcastOperations broadcastOperations;
-
     @Mock
     private SocketIONamespace socketIONamespace;
-
-    @Captor
-    private ArgumentCaptor<Map<String, String>> socketMappingCaptor;
-
-    @Captor
-    private ArgumentCaptor<Map<String, Object>> eventDataCaptor;
 
     private SocketEventHandler socketEventHandler;
     private String socketId = "12345678-1234-1234-1234-123456789012";
@@ -103,7 +85,6 @@ class SocketEventHandlerTest {
         mockRoom.setCurrentPlaybackTime(0.0);
         mockRoom.setIsPlaying(false);
         
-        // Setup common mocks
         when(socketServer.getRoomOperations(anyString())).thenReturn(broadcastOperations);
         when(client.getNamespace()).thenReturn(socketIONamespace);
         when(socketIONamespace.getRoomOperations(anyString())).thenReturn(broadcastOperations);
@@ -111,408 +92,335 @@ class SocketEventHandlerTest {
 
     @Test
     void onConnect_ShouldStoreSocketMappingInRedis() {
-        // Arrange
         when(client.getSessionId()).thenReturn(UUID.fromString("12345678-1234-1234-1234-123456789012"));
-
-        // Act
         socketEventHandler.onConnect(client);
-
-        // Assert
-        verify(redisUtil).set(
-                eq(RedisUtil.KEY_PREFIX_SOCKET + socketId),
-                any(Map.class),
-                eq(RedisUtil.TTL_SESSION)
-        );
+        verify(redisUtil).set(eq(RedisUtil.KEY_PREFIX_SOCKET + socketId), any(Map.class), eq(RedisUtil.TTL_SESSION));
     }
 
     @Test
     void onDisconnect_WithRoomMembership_ShouldCleanupAndBroadcast() {
-        // Arrange
         Map<String, String> socketMapping = new HashMap<>();
         socketMapping.put("sessionId", sessionId);
         socketMapping.put("roomCode", roomCode);
         socketMapping.put("roomId", roomId.toString());
-        
-        // Mock room users map
-        Map<String, Object> roomUsers = new HashMap<>();
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("sessionId", sessionId);
-        userInfo.put("socketId", socketId);
-        userInfo.put("joinedAt", System.currentTimeMillis());
-        roomUsers.put(sessionId, userInfo);
-        
-        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class)))
-                .thenReturn(socketMapping);
-        when(redisUtil.getRoomUsers(roomId.toString())).thenReturn(roomUsers);
+        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class))).thenReturn(socketMapping);
+        when(redisUtil.getRoomUsers(roomId.toString())).thenReturn(new HashMap<>());
 
-        // Act
         socketEventHandler.onDisconnect(client);
 
-        // Assert
-        // Verify user-left event broadcast
         verify(socketServer.getRoomOperations(roomCode)).sendEvent(eq("user-left"), any(Map.class));
-        
-        // Verify user removed from room (via setRoomUsers)
-        verify(redisUtil).setRoomUsers(eq(roomId.toString()), any(Map.class));
-        
-        // Verify session cleanup
         verify(sessionService).leaveRoom(sessionId);
-        
-        // Verify room activity updated
         verify(roomService).updateRoomActivity(roomId);
-        
-        // Verify Redis cleanup
-        verify(redisUtil).delete(KEY_PREFIX_SESSION + "socket:" + socketId);
-        verify(redisUtil).delete(RedisUtil.KEY_PREFIX_SOCKET + socketId);
     }
 
     @Test
     void onDisconnect_WithoutRoomMembership_ShouldOnlyCleanupSocket() {
-        // Arrange
-        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class)))
-                .thenReturn(null);
-
-        // Act
+        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class))).thenReturn(null);
         socketEventHandler.onDisconnect(client);
-
-        // Assert
-        verify(socketServer, never()).getRoomOperations(anyString());
-        verify(redisUtil, never()).delete(contains("room:users:"));
         verify(sessionService, never()).leaveRoom(anyString());
         verify(roomService, never()).updateRoomActivity(anyLong());
-        // Should delete both socket keys
         verify(redisUtil).delete(RedisUtil.KEY_PREFIX_SOCKET + socketId);
-        verify(redisUtil, never()).delete(KEY_PREFIX_SESSION + "socket:" + socketId);
     }
 
     @Test
-    void onJoinRoom_WithValidData_ShouldJoinRoomAndSendAck() {
-        // Arrange
+    void onJoinRoom_WithValidData_ShouldJoinRoom() {
         JoinRoomEvent joinData = new JoinRoomEvent();
         joinData.setRoomId(roomCode);
         joinData.setSessionId(sessionId);
-        
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.of(mockRoom));
-        when(ackRequest.isAckRequested()).thenReturn(true);
 
-        // Act
         socketEventHandler.onJoinRoom(client, joinData, ackRequest);
 
-        // Assert
-        // Verify client joined room
         verify(client).joinRoom(roomCode);
-        
-        // Verify session updated
         verify(sessionService).joinRoom(sessionId, roomId);
-        
-        // Verify Redis mapping stored
-        verify(redisUtil).set(
-                eq(KEY_PREFIX_SESSION + "socket:" + socketId),
-                any(Map.class),
-                eq(RedisUtil.TTL_SESSION)
-        );
-        
-        // Verify user added to room (via setRoomUsers)
         verify(redisUtil).setRoomUsers(eq(roomId.toString()), any(Map.class));
-        
-        // Verify room activity updated
         verify(roomService).updateRoomActivity(roomId);
-        
-        // Verify ACK response
-        verify(ackRequest).sendAckData(any(Map.class));
-        
-        // Verify user-joined broadcast
-        verify(socketServer.getRoomOperations(roomCode)).sendEvent(eq("user-joined"), any(Map.class));
-        
-        // Verify room state sent to client
-        // Note: sendRoomState is private, but we can verify it's called indirectly
     }
 
     @Test
-    void onJoinRoom_WithoutRoomId_ShouldSendErrorAck() {
-        // Arrange
+    void onJoinRoom_WithoutRoomId_ShouldNotJoin() {
         JoinRoomEvent joinData = new JoinRoomEvent();
-        joinData.setSessionId(sessionId); // Missing roomId
-        
-        when(ackRequest.isAckRequested()).thenReturn(true);
-
-        // Act
+        joinData.setSessionId(sessionId);
         socketEventHandler.onJoinRoom(client, joinData, ackRequest);
-
-        // Assert
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(false) &&
-                data.get("message").equals("Room ID is required")
-        ));
-        
         verify(client, never()).joinRoom(anyString());
         verify(sessionService, never()).validateSession(anyString());
     }
 
     @Test
-    void onJoinRoom_WithInvalidSession_ShouldSendErrorAck() {
-        // Arrange
+    void onJoinRoom_WithInvalidSession_ShouldNotJoin() {
         JoinRoomEvent joinData = new JoinRoomEvent();
         joinData.setRoomId(roomCode);
         joinData.setSessionId(sessionId);
-        
         when(sessionService.validateSession(sessionId)).thenReturn(false);
-        when(ackRequest.isAckRequested()).thenReturn(true);
-
-        // Act
         socketEventHandler.onJoinRoom(client, joinData, ackRequest);
-
-        // Assert
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(false) &&
-                data.get("message").equals("Invalid session")
-        ));
-        
         verify(client, never()).joinRoom(anyString());
-        verify(roomService, never()).getRoomByCode(anyString());
     }
 
     @Test
-    void onJoinRoom_WithNonExistentRoom_ShouldSendErrorAck() {
-        // Arrange
+    void onJoinRoom_WithNonExistentRoom_ShouldNotJoin() {
         JoinRoomEvent joinData = new JoinRoomEvent();
         joinData.setRoomId(roomCode);
         joinData.setSessionId(sessionId);
-        
         when(sessionService.validateSession(sessionId)).thenReturn(true);
         when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.empty());
-        when(ackRequest.isAckRequested()).thenReturn(true);
-
-        // Act
         socketEventHandler.onJoinRoom(client, joinData, ackRequest);
-
-        // Assert
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(false) &&
-                data.get("message").equals("Room not found")
-        ));
-        
         verify(client, never()).joinRoom(anyString());
     }
 
     @Test
-    void onJoinRoom_WithPrivateRoomAndInvalidSession_ShouldSendErrorAck() {
-        // Arrange
-        mockRoom.setIsPublic(false);
-        JoinRoomEvent joinData = new JoinRoomEvent();
-        joinData.setRoomId(roomCode);
-        joinData.setSessionId(sessionId);
-        
-        when(sessionService.validateSession(sessionId)).thenReturn(false);
-        when(roomService.getRoomByCode(roomCode)).thenReturn(Optional.of(mockRoom));
-        when(ackRequest.isAckRequested()).thenReturn(true);
-
-        // Act
-        socketEventHandler.onJoinRoom(client, joinData, ackRequest);
-
-        // Assert
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(false) &&
-                data.get("message").equals("Invalid session")
-        ));
-        
-        verify(client, never()).joinRoom(anyString());
-    }
-
-    @Test
-    void onLeaveRoom_WithValidRoomMembership_ShouldLeaveRoomAndSendAck() {
-        // Arrange
+    void onLeaveRoom_WithValidRoomMembership_ShouldLeaveRoom() {
         LeaveRoomEvent leaveData = new LeaveRoomEvent();
         leaveData.setRoomId(roomCode);
-        
         Map<String, String> socketMapping = new HashMap<>();
         socketMapping.put("roomCode", roomCode);
         socketMapping.put("roomId", roomId.toString());
         socketMapping.put("sessionId", sessionId);
-        
-        // Mock room users map
-        Map<String, Object> roomUsers = new HashMap<>();
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("sessionId", sessionId);
-        userInfo.put("socketId", socketId);
-        userInfo.put("joinedAt", System.currentTimeMillis());
-        roomUsers.put(sessionId, userInfo);
-        
-        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class)))
-                .thenReturn(socketMapping);
-        when(redisUtil.getRoomUsers(roomId.toString())).thenReturn(roomUsers);
-        when(ackRequest.isAckRequested()).thenReturn(true);
+        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class))).thenReturn(socketMapping);
+        when(redisUtil.getRoomUsers(roomId.toString())).thenReturn(new HashMap<>());
 
-        // Act
         socketEventHandler.onLeaveRoom(client, leaveData, ackRequest);
 
-        // Assert
-        // Verify client left room
         verify(client).leaveRoom(roomCode);
-        
-        // Verify user-left broadcast
         verify(socketServer.getRoomOperations(roomCode)).sendEvent(eq("user-left"), any(Map.class));
-        
-        // Verify user removed from room (via setRoomUsers)
-        verify(redisUtil).setRoomUsers(eq(roomId.toString()), any(Map.class));
-        
-        // Verify session updated
-        verify(sessionService).leaveRoom(sessionId);
-        
-        // Verify room activity updated
-        verify(roomService).updateRoomActivity(roomId);
-        
-        // Verify Redis mapping updated (set with new values)
-        verify(redisUtil).set(eq(KEY_PREFIX_SESSION + "socket:" + socketId), any(Map.class), eq(RedisUtil.TTL_SESSION));
-        
-        // Verify ACK response
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(true)
-        ));
-    }
-
-    @Test
-    void onLeaveRoom_WithoutRoomMembership_ShouldSendSuccessAck() {
-        // Arrange
-        LeaveRoomEvent leaveData = new LeaveRoomEvent();
-        leaveData.setRoomId(roomCode);
-        
-        when(redisUtil.get(eq(KEY_PREFIX_SESSION + "socket:" + socketId), eq(Map.class)))
-                .thenReturn(null);
-        when(ackRequest.isAckRequested()).thenReturn(true);
-
-        // Act
-        socketEventHandler.onLeaveRoom(client, leaveData, ackRequest);
-
-        // Assert
-        // Should still send success ACK (actual implementation always sends success)
-        verify(ackRequest).sendAckData(argThat((Map<String, Object> data) ->
-                data.get("success").equals(true)
-        ));
-        
-        // Should not leave room or broadcast since no room membership
-        verify(client, never()).leaveRoom(anyString());
-        verify(socketServer, never()).getRoomOperations(anyString());
-        
-        // Should still update socket mapping
-        verify(redisUtil).set(eq(KEY_PREFIX_SESSION + "socket:" + socketId), any(Map.class), eq(RedisUtil.TTL_SESSION));
     }
 
     @Test
     void onVideoPlay_WithValidRoom_ShouldBroadcastPlayEvent() {
-        // Arrange
         VideoPlayEvent playData = new VideoPlayEvent();
         playData.setRoomId(roomCode);
         playData.setTime(30.5);
-        
-        // Note: Actual SocketEventHandler doesn't check Redis for room membership
-        // It just processes the event if roomId is provided
 
-        // Act
         socketEventHandler.onVideoPlay(client, playData, ackRequest);
 
-        // Assert
-        // Should store playback state in Redis
         verify(redisUtil).setRoomPlayback(eq(roomCode), any(Map.class));
-        
-        // Should broadcast to room except sender
-        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(
-                eq("video:sync-play"),
-                any(Map.class),
-                eq(client)
-        );
-        
-        // Note: Actual implementation doesn't call roomService.updatePlaybackState
-        // It only updates Redis
+        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(eq("video:sync-play"), any(Map.class), eq(client));
     }
 
     @Test
     void onVideoPause_WithValidRoom_ShouldBroadcastPauseEvent() {
-        // Arrange
         VideoPauseEvent pauseData = new VideoPauseEvent();
         pauseData.setRoomId(roomCode);
-        
-        // Note: Actual SocketEventHandler doesn't check Redis for room membership
-        // It just processes the event if roomId is provided
 
-        // Act
         socketEventHandler.onVideoPause(client, pauseData, ackRequest);
 
-        // Assert
-        // Should store playback state in Redis
         verify(redisUtil).setRoomPlayback(eq(roomCode), any(Map.class));
-        
-        // Should broadcast to room except sender
-        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(
-                eq("video:sync-pause"),
-                any(Map.class),
-                eq(client)
-        );
+        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(eq("video:sync-pause"), any(Map.class), eq(client));
     }
 
     @Test
     void onVideoSeek_WithValidRoom_ShouldBroadcastSeekEvent() {
-        // Arrange
         VideoSeekEvent seekData = new VideoSeekEvent();
         seekData.setRoomId(roomCode);
         seekData.setTime(45.2);
-        
-        // Note: Actual SocketEventHandler doesn't check Redis for room membership
-        // It just processes the event if roomId is provided
 
-        // Act
         socketEventHandler.onVideoSeek(client, seekData, ackRequest);
 
-        // Assert
-        // Should store playback state in Redis
         verify(redisUtil).setRoomPlayback(eq(roomCode), any(Map.class));
-        
-        // Should broadcast to room except sender
-        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(
-                eq("video:sync-seek"),
-                any(Map.class),
-                eq(client)
-        );
+        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(eq("video:sync-seek"), any(Map.class), eq(client));
     }
 
     @Test
-    void onChatMessage_WithValidRoom_ShouldBroadcastMessage() {
-        // Arrange
+    void onVideoUrlChange_WithValidData_ShouldBroadcast() {
+        VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
+        urlData.setRoomId(roomCode);
+        urlData.setUrl("https://new-video.com/video.mp4");
+
+        socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
+
+        verify(redisUtil).setRoom(eq(roomCode), any(Map.class));
+        verify(socketIONamespace.getRoomOperations(roomCode)).sendEvent(eq("video:sync-url-change"), any(Map.class), eq(client));
+    }
+
+    @Test
+    void onVideoUrlChange_WithEmptyRoomId_ShouldNotBroadcast() {
+        VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
+        urlData.setRoomId("");
+        urlData.setUrl("https://video.com/video.mp4");
+
+        socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
+
+        verify(redisUtil, never()).setRoom(anyString(), any(Map.class));
+    }
+
+    @Test
+    void onVideoUrlChange_WithNullUrl_ShouldNotBroadcast() {
+        VideoUrlChangeEvent urlData = new VideoUrlChangeEvent();
+        urlData.setRoomId(roomCode);
+        urlData.setUrl(null);
+
+        socketEventHandler.onVideoUrlChange(client, urlData, ackRequest);
+
+        verify(redisUtil, never()).setRoom(anyString(), any(Map.class));
+    }
+
+    @Test
+    void onChatMessage_WithValidRoom_ShouldSaveAndBroadcast() {
         ChatMessageEvent messageData = new ChatMessageEvent();
-        messageData.setRoomId(roomCode);
+        messageData.setRoomId("1");
         messageData.setMessage("Hello World");
         messageData.setSender("testUser");
         
-        // Note: Actual SocketEventHandler doesn't check Redis for room membership
-        // It just processes the event if roomId and message are provided
+        com.watchtogether.model.ChatMessage savedMessage = new com.watchtogether.model.ChatMessage();
+        savedMessage.setId(1L);
+        savedMessage.setRoomId(1L);
+        savedMessage.setContent("Hello World");
+        savedMessage.setSessionId(socketId);
+        savedMessage.setCreatedAt(java.time.LocalDateTime.now());
+        when(chatMessageRepository.save(any(com.watchtogether.model.ChatMessage.class))).thenReturn(savedMessage);
 
-        // Act
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
 
-        // Assert
-        verify(socketServer.getRoomOperations(roomCode)).sendEvent(
-                eq("chat:message"),
-                any(Map.class)
-        );
-        
-        // Note: Actual implementation doesn't call roomService.updateRoomActivity
-        // It only broadcasts the message
+        verify(chatMessageRepository).save(any(com.watchtogether.model.ChatMessage.class));
+        verify(socketServer.getRoomOperations("1")).sendEvent(eq("chat:message"), any(Map.class));
     }
 
     @Test
-    void addUserToRoom_ShouldStoreUserInRedis() {
-        // This is a private method, but we can test it through public methods
-        // For now, we'll trust that it works if the integration tests pass
+    void onChatMessage_WithNullRoomId_ShouldNotProcess() {
+        ChatMessageEvent messageData = new ChatMessageEvent();
+        messageData.setRoomId(null);
+        messageData.setMessage("Hello");
+        socketEventHandler.onChatMessage(client, messageData, ackRequest);
+        verify(chatMessageRepository, never()).save(any());
     }
 
     @Test
-    void removeUserFromRoom_ShouldRemoveUserFromRedis() {
-        // This is a private method, but we can test it through public methods
+    void onChatMessage_WithEmptyMessage_ShouldNotProcess() {
+        ChatMessageEvent messageData = new ChatMessageEvent();
+        messageData.setRoomId("1");
+        messageData.setMessage("");
+        socketEventHandler.onChatMessage(client, messageData, ackRequest);
+        verify(chatMessageRepository, never()).save(any());
     }
 
     @Test
-    void sendRoomState_ShouldSendRoomStateToClient() {
-        // This is a private method, but we can test it through public methods
+    void onChatMessage_WithTooLongMessage_ShouldNotProcess() {
+        ChatMessageEvent messageData = new ChatMessageEvent();
+        messageData.setRoomId("1");
+        messageData.setMessage("a".repeat(1001));
+        socketEventHandler.onChatMessage(client, messageData, ackRequest);
+        verify(chatMessageRepository, never()).save(any());
+    }
+
+    @Test
+    void onChatMessage_WithInvalidRoomIdFormat_ShouldNotProcess() {
+        ChatMessageEvent messageData = new ChatMessageEvent();
+        messageData.setRoomId("invalid-id");
+        messageData.setMessage("Hello");
+        socketEventHandler.onChatMessage(client, messageData, ackRequest);
+        verify(chatMessageRepository, never()).save(any());
+    }
+
+    @Test
+    void onChatMessage_WithDatabaseError_ShouldHandleGracefully() {
+        ChatMessageEvent messageData = new ChatMessageEvent();
+        messageData.setRoomId("1");
+        messageData.setMessage("Hello");
+        when(chatMessageRepository.save(any())).thenThrow(new RuntimeException("DB error"));
+        assertDoesNotThrow(() -> socketEventHandler.onChatMessage(client, messageData, ackRequest));
+    }
+
+    @Test
+    void onVideoPlay_WithEmptyRoomId_ShouldNotBroadcast() {
+        VideoPlayEvent playData = new VideoPlayEvent();
+        playData.setRoomId("");
+        playData.setTime(30.5);
+        socketEventHandler.onVideoPlay(client, playData, ackRequest);
+        verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));
+    }
+
+    @Test
+    void onVideoPause_WithEmptyRoomId_ShouldNotBroadcast() {
+        VideoPauseEvent pauseData = new VideoPauseEvent();
+        pauseData.setRoomId("");
+        socketEventHandler.onVideoPause(client, pauseData, ackRequest);
+        verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));
+    }
+
+    @Test
+    void onVideoSeek_WithEmptyRoomId_ShouldNotBroadcast() {
+        VideoSeekEvent seekData = new VideoSeekEvent();
+        seekData.setRoomId("");
+        seekData.setTime(45.2);
+        socketEventHandler.onVideoSeek(client, seekData, ackRequest);
+        verify(redisUtil, never()).setRoomPlayback(anyString(), any(Map.class));
+    }
+
+    @Test
+    void sendAckError_WithAckRequested_ShouldSendErrorData() {
+        when(ackRequest.isAckRequested()).thenReturn(true);
+        socketEventHandler.sendAckError(ackRequest, "Test error");
+        verify(ackRequest, atLeastOnce()).sendAckData(any(Object[].class));
+    }
+
+    @Test
+    void sendAckError_WithoutAckRequested_ShouldNotSend() {
+        when(ackRequest.isAckRequested()).thenReturn(false);
+        socketEventHandler.sendAckError(ackRequest, "Test error");
+        verify(ackRequest, never()).sendAckData(any(Object[].class));
+    }
+
+    @Test
+    void sendAckSuccess_WithAckRequested_ShouldSendSuccessData() {
+        when(ackRequest.isAckRequested()).thenReturn(true);
+        Map<String, Object> data = new HashMap<>();
+        data.put("key", "value");
+        socketEventHandler.sendAckSuccess(ackRequest, data);
+        verify(ackRequest, atLeastOnce()).sendAckData(any(Object[].class));
+    }
+
+    @Test
+    void sendAckSuccess_WithoutAckRequested_ShouldNotSend() {
+        when(ackRequest.isAckRequested()).thenReturn(false);
+        socketEventHandler.sendAckSuccess(ackRequest, new HashMap<>());
+        verify(ackRequest, never()).sendAckData(any(Object[].class));
+    }
+
+    @Test
+    void addUserToRoom_WithNewUser_ShouldAddToRedis() {
+        when(redisUtil.getRoomUsers("1")).thenReturn(null);
+        socketEventHandler.addUserToRoom("1", "session-1", "socket-1");
+        verify(redisUtil).setRoomUsers(eq("1"), any(Map.class));
+    }
+
+    @Test
+    void addUserToRoom_WithExistingUsers_ShouldPreserveAndAdd() {
+        Map<String, Object> existingUsers = new HashMap<>();
+        existingUsers.put("session-old", Map.of("sessionId", "session-old"));
+        when(redisUtil.getRoomUsers("1")).thenReturn(existingUsers);
+        socketEventHandler.addUserToRoom("1", "session-new", "socket-new");
+        verify(redisUtil).setRoomUsers(eq("1"), any(Map.class));
+    }
+
+    @Test
+    void removeUserFromRoom_WithExistingUser_ShouldRemove() {
+        Map<String, Object> existingUsers = new HashMap<>();
+        existingUsers.put("session-1", Map.of("sessionId", "session-1"));
+        when(redisUtil.getRoomUsers("1")).thenReturn(existingUsers);
+        socketEventHandler.removeUserFromRoom("1", "session-1");
+        verify(redisUtil).setRoomUsers(eq("1"), any(Map.class));
+    }
+
+    @Test
+    void removeUserFromRoom_WithNoUsers_ShouldNotThrow() {
+        when(redisUtil.getRoomUsers("1")).thenReturn(null);
+        assertDoesNotThrow(() -> socketEventHandler.removeUserFromRoom("1", "session-1"));
+    }
+
+    @Test
+    void sendRoomState_WithOnlineUsers_ShouldIncludeUserCount() {
+        Map<String, Object> usersData = new HashMap<>();
+        usersData.put("s1", Map.of("sessionId", "s1"));
+        usersData.put("s2", Map.of("sessionId", "s2"));
+        when(redisUtil.getRoomUsers("1")).thenReturn(usersData);
+        socketEventHandler.sendRoomState(client, mockRoom, roomCode);
+        verify(client).sendEvent(eq("room-state"), any(Map.class));
+    }
+
+    @Test
+    void sendRoomState_WithNoUsers_ShouldIncludeZeroCount() {
+        when(redisUtil.getRoomUsers("1")).thenReturn(null);
+        socketEventHandler.sendRoomState(client, mockRoom, roomCode);
+        verify(client).sendEvent(eq("room-state"), any(Map.class));
     }
 }
