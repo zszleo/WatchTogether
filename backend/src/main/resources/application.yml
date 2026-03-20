@@ -61,6 +61,8 @@ socketio:
   tcp-nodelay: true
   # Enable/disable TCP keepalive
   tcp-keepalive: true
+  # Allowed origins for CORS (use * for development, specific domain for production)
+  allowed-origins: ${SOCKETIO_ALLOWED_ORIGINS:*}
 
 # Application Settings
 app:

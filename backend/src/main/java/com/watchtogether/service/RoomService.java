@@ -10,6 +10,9 @@ import com.watchtogether.utils.RedisUtil;
 import jakarta.annotation.Resource;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,28 +31,36 @@ public class RoomService {
     @Resource
     public RoomRepository roomRepository;
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public Room createRoom(CreateRoomReq request, String ownerSessionId) {
-        String roomCode = generateRoomCode();
-        
-        Room room = new Room();
-        room.setCode(roomCode);
-        room.setName(request.getName());
-        room.setDescription(request.getDescription());
-        room.setMaxUsers(request.getMaxUsers() != null ? request.getMaxUsers() : 5);
-        room.setIsPublic(request.getIsPublic() != null ? request.getIsPublic() : true);
-        room.setOwnerSessionId(ownerSessionId);
-        room.setVideoUrl(request.getVideoUrl());
-        room.setVideoTitle(request.getVideoTitle());
-        // createdAt, updatedAt, lastActivityAt will be set by @PrePersist
-        
-        roomRepository.save(room);
-        
-        // Cache room in Redis
-        cacheRoom(room);
-        
-        log.info("Created new room: {} (code: {}) owned by session {}", 
-                   room.getId(), roomCode, ownerSessionId);
-        return room;
+        log.debug("Starting transaction for createRoom, ownerSessionId: {}", ownerSessionId);
+        try {
+            String roomCode = generateRoomCode();
+            
+            Room room = new Room();
+            room.setCode(roomCode);
+            room.setName(request.getName());
+            room.setDescription(request.getDescription());
+            room.setMaxUsers(request.getMaxUsers() != null ? request.getMaxUsers() : 5);
+            room.setIsPublic(request.getIsPublic() != null ? request.getIsPublic() : true);
+            room.setOwnerSessionId(ownerSessionId);
+            room.setVideoUrl(request.getVideoUrl());
+            room.setVideoTitle(request.getVideoTitle());
+            // createdAt, updatedAt, lastActivityAt will be set by @PrePersist
+            
+            roomRepository.save(room);
+            
+            // Cache room in Redis
+            cacheRoom(room);
+            
+            log.debug("Transaction committed successfully for room: {}", room.getId());
+            log.info("Created new room: {} (code: {}) owned by session {}", 
+                       room.getId(), roomCode, ownerSessionId);
+            return room;
+        } catch (Exception e) {
+            log.error("Transaction failed for createRoom, ownerSessionId: {}", ownerSessionId, e);
+            throw e;
+        }
     }
 
     public Optional<Room> getRoomById(Long roomId) {
@@ -90,6 +101,7 @@ public class RoomService {
         }).collect(Collectors.toList());
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public boolean deleteRoom(Long roomId, String sessionId) {
         Optional<Room> roomOpt = roomRepository.findById(roomId);
         if (roomOpt.isEmpty()) {
@@ -121,16 +133,24 @@ public class RoomService {
         return "/join/" + roomCode;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void updateRoomActivity(Long roomId) {
         roomRepository.updateLastActivity(roomId, LocalDateTime.now());
         
-        // Also update Redis TTL for room cache
-        Map<String, Object> cached = redisUtil.getRoom(roomId.toString(), Map.class);
-        if (cached != null) {
-            redisUtil.setRoom(roomId.toString(), cached);
+        // Redis update is intentionally outside transaction
+        // If Redis fails, database is still updated (eventual consistency)
+        // This is acceptable for activity tracking
+        try {
+            Map<String, Object> cached = redisUtil.getRoom(roomId.toString(), Map.class);
+            if (cached != null) {
+                redisUtil.setRoom(roomId.toString(), cached);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to update Redis for room activity {}: {}", roomId, e.getMessage());
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void updateVideoInfo(Long roomId, String videoUrl, String videoTitle, Integer videoDuration) {
         roomRepository.updateVideoInfo(roomId, videoUrl, videoTitle, videoDuration);
         
@@ -141,6 +161,7 @@ public class RoomService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void updatePlaybackState(Long roomId, Double currentTime, Boolean isPlaying) {
         LocalDateTime now = LocalDateTime.now();
         roomRepository.updatePlaybackState(roomId, currentTime, isPlaying, now);
@@ -154,9 +175,17 @@ public class RoomService {
     }
 
     public Integer getOnlineUserCount(Long roomId) {
-        // In Redis, we could store a set of online users per room
-        // For now, return 0 as placeholder
-        return 0;
+        try {
+            Object usersObj = redisUtil.getRoomUsers(roomId.toString());
+            if (usersObj instanceof Map) {
+                Map<String, Object> usersData = (Map<String, Object>) usersObj;
+                return usersData.size();
+            }
+            return 0;
+        } catch (Exception e) {
+            log.warn("Failed to get online user count for room {}: {}", roomId, e.getMessage());
+            return 0;
+        }
     }
 
     private String generateRoomCode() {
@@ -195,16 +224,31 @@ public class RoomService {
     }
 
     private Room mapToRoom(Map<String, Object> data) {
+        if (data == null) {
+            throw new IllegalArgumentException("Room data cannot be null");
+        }
+        
         Room room = new Room();
-        room.setId(Long.valueOf(data.get("id").toString()));
-        room.setCode((String) data.get("code"));
-        room.setName((String) data.get("name"));
-        room.setDescription((String) data.get("description"));
-        room.setMaxUsers(Integer.valueOf(data.get("maxUsers").toString()));
-        room.setIsPublic(Boolean.valueOf(data.get("isPublic").toString()));
-        room.setOwnerSessionId((String) data.get("ownerSessionId"));
-        room.setVideoUrl((String) data.get("videoUrl"));
-        room.setVideoTitle((String) data.get("videoTitle"));
+        
+        Object id = data.get("id");
+        if (id == null) {
+            throw new IllegalArgumentException("Room ID is required");
+        }
+        room.setId(Long.valueOf(id.toString()));
+        
+        room.setCode(getStringValue(data, "code"));
+        room.setName(getStringValue(data, "name"));
+        room.setDescription(getStringValue(data, "description"));
+        
+        Object maxUsers = data.get("maxUsers");
+        room.setMaxUsers(maxUsers != null ? Integer.valueOf(maxUsers.toString()) : 5);
+        
+        Object isPublic = data.get("isPublic");
+        room.setIsPublic(isPublic != null ? Boolean.valueOf(isPublic.toString()) : true);
+        
+        room.setOwnerSessionId(getStringValue(data, "ownerSessionId"));
+        room.setVideoUrl(getStringValue(data, "videoUrl"));
+        room.setVideoTitle(getStringValue(data, "videoTitle"));
         
         Object videoDuration = data.get("videoDuration");
         if (videoDuration != null) {
@@ -221,10 +265,12 @@ public class RoomService {
             room.setIsPlaying(Boolean.valueOf(isPlaying.toString()));
         }
         
-        // Note: Dates are stored as strings, not converting back for simplicity
-        // In real implementation, you'd parse the strings
-        
         return room;
+    }
+    
+    private String getStringValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        return value != null ? value.toString() : null;
     }
 
     private RoomResp mapToRoomResponse(Room room) {

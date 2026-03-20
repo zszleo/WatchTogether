@@ -9,6 +9,7 @@ import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.watchtogether.handler.SocketEventHandler;
 import com.watchtogether.model.Room;
+import com.watchtogether.repository.ChatMessageRepository;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.utils.RedisUtil;
@@ -53,6 +54,9 @@ class SocketEventHandlerTest {
     private SessionService sessionService;
 
     @Mock
+    private ChatMessageRepository chatMessageRepository;
+
+    @Mock
     private SocketIOClient client;
 
     @Mock
@@ -79,8 +83,13 @@ class SocketEventHandlerTest {
 
     @BeforeEach
     void setUp() {
-        socketEventHandler = new SocketEventHandler(socketServer, redisUtil, roomService, sessionService);
-        
+        socketEventHandler = new SocketEventHandler();
+        socketEventHandler.socketServer = socketServer;
+        socketEventHandler.redisUtil = redisUtil;
+        socketEventHandler.roomService = roomService;
+        socketEventHandler.sessionService = sessionService;
+        socketEventHandler.chatMessageRepository = chatMessageRepository;
+
         UUID socketUuid = UUID.fromString(socketId);
         when(client.getSessionId()).thenReturn(socketUuid);
         

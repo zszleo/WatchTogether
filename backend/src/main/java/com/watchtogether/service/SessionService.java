@@ -8,6 +8,9 @@ import com.watchtogether.utils.RedisUtil;
 import jakarta.annotation.Resource;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -24,30 +27,38 @@ public class SessionService {
     @Resource
     private SessionRepository sessionRepository;
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public Session createSession(String nickname, String avatar) {
-        String sessionId = generateSessionId();
-        
-        Session session = new Session();
-        session.setId(sessionId);
-        session.setNickname(nickname);
-        session.setAvatar(avatar);
-        session.setIsOnline(false);
-        session.setCreatedAt(LocalDateTime.now());
-        session.setUpdatedAt(LocalDateTime.now());
-        session.setLastSeenAt(LocalDateTime.now());
-        
-        sessionRepository.save(session);
-        
-        // Cache session in Redis
-        Map<String, Object> sessionData = new HashMap<>();
-        sessionData.put("id", sessionId);
-        sessionData.put("nickname", nickname);
-        sessionData.put("avatar", avatar);
-        sessionData.put("createdAt", session.getCreatedAt().toString());
-        redisUtil.setSession(sessionId, sessionData);
-        
-        log.info("Created new session: {} for nickname: {}", sessionId, nickname);
-        return session;
+        log.debug("Starting transaction for createSession, nickname: {}", nickname);
+        try {
+            String sessionId = generateSessionId();
+            
+            Session session = new Session();
+            session.setId(sessionId);
+            session.setNickname(nickname);
+            session.setAvatar(avatar);
+            session.setIsOnline(false);
+            session.setCreatedAt(LocalDateTime.now());
+            session.setUpdatedAt(LocalDateTime.now());
+            session.setLastSeenAt(LocalDateTime.now());
+            
+            sessionRepository.save(session);
+            
+            // Cache session in Redis
+            Map<String, Object> sessionData = new HashMap<>();
+            sessionData.put("id", sessionId);
+            sessionData.put("nickname", nickname);
+            sessionData.put("avatar", avatar);
+            sessionData.put("createdAt", session.getCreatedAt().toString());
+            redisUtil.setSession(sessionId, sessionData);
+            
+            log.debug("Transaction committed successfully for session: {}", sessionId);
+            log.info("Created new session: {} for nickname: {}", sessionId, nickname);
+            return session;
+        } catch (Exception e) {
+            log.error("Transaction failed for createSession, nickname: {}", nickname, e);
+            throw e;
+        }
     }
 
     public Optional<Session> getSession(String sessionId) {
@@ -92,73 +103,57 @@ public class SessionService {
         return sessionRepository.existsById(sessionId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void updateSessionSocket(String sessionId, String socketId) {
-        Optional<Session> sessionOpt = sessionRepository.findById(sessionId);
-        if (sessionOpt.isPresent()) {
-            Session session = sessionOpt.get();
-            session.setSocketId(socketId);
-            session.setIsOnline(true);
-            session.setLastSeenAt(LocalDateTime.now());
-            sessionRepository.save(session);
-            
-            // Update Redis cache
-            Map<String, Object> sessionData = new HashMap<>();
-            sessionData.put("id", session.getId());
-            sessionData.put("nickname", session.getNickname());
-            sessionData.put("avatar", session.getAvatar());
+        LocalDateTime now = LocalDateTime.now();
+        sessionRepository.updateSocketInfo(sessionId, socketId, now);
+        
+        // Update Redis cache
+        Map<String, Object> sessionData = redisUtil.getSession(sessionId, Map.class);
+        if (sessionData != null) {
             sessionData.put("socketId", socketId);
-            sessionData.put("createdAt", session.getCreatedAt().toString());
             redisUtil.setSession(sessionId, sessionData);
-            
-            log.info("Updated session {} with socket {}", sessionId, socketId);
         }
+        
+        log.info("Updated session {} with socket {}", sessionId, socketId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void updateSessionLastSeen(String sessionId) {
-        Optional<Session> sessionOpt = sessionRepository.findById(sessionId);
-        if (sessionOpt.isPresent()) {
-            Session session = sessionOpt.get();
-            session.setLastSeenAt(LocalDateTime.now());
-            sessionRepository.save(session);
-            
-            // Also update Redis TTL by re-setting
-            Map<String, Object> sessionData = redisUtil.getSession(sessionId, Map.class);
-            if (sessionData != null) {
-                redisUtil.setSession(sessionId, sessionData);
-            }
+        LocalDateTime now = LocalDateTime.now();
+        sessionRepository.updateLastSeen(sessionId, now);
+        
+        // Also update Redis TTL by re-setting
+        Map<String, Object> sessionData = redisUtil.getSession(sessionId, Map.class);
+        if (sessionData != null) {
+            redisUtil.setSession(sessionId, sessionData);
         }
+        
+        log.debug("Updated last seen for session {}", sessionId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void deleteSession(String sessionId) {
         sessionRepository.deleteById(sessionId);
         redisUtil.deleteSession(sessionId);
         log.info("Deleted session: {}", sessionId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void joinRoom(String sessionId, Long roomId) {
-        Optional<Session> sessionOpt = sessionRepository.findById(sessionId);
-        if (sessionOpt.isPresent()) {
-            Session session = sessionOpt.get();
-            session.setRoomId(roomId);
-            session.setLastSeenAt(LocalDateTime.now());
-            sessionRepository.save(session);
-            
-            log.info("Session {} joined room {}", sessionId, roomId);
-        }
+        LocalDateTime now = LocalDateTime.now();
+        sessionRepository.updateRoom(sessionId, roomId, now);
+        log.info("Session {} joined room {}", sessionId, roomId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public void leaveRoom(String sessionId) {
-        Optional<Session> sessionOpt = sessionRepository.findById(sessionId);
-        if (sessionOpt.isPresent()) {
-            Session session = sessionOpt.get();
-            session.setRoomId(null);
-            session.setLastSeenAt(LocalDateTime.now());
-            sessionRepository.save(session);
-            
-            log.info("Session {} left room", sessionId);
-        }
+        LocalDateTime now = LocalDateTime.now();
+        sessionRepository.leaveRoom(sessionId, now);
+        log.info("Session {} left room", sessionId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public Optional<Session> updateSession(String sessionId, String nickname, String avatar) {
         Optional<Session> sessionOpt = sessionRepository.findById(sessionId);
         if (sessionOpt.isPresent()) {

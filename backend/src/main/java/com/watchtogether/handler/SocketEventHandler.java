@@ -7,18 +7,22 @@ import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
 import com.watchtogether.utils.RedisUtil;
+
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.model.Room;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import com.watchtogether.model.ChatMessage;
+import com.watchtogether.repository.ChatMessageRepository;
 import com.watchtogether.dto.event.JoinRoomEvent;
 import com.watchtogether.dto.event.LeaveRoomEvent;
 import com.watchtogether.dto.event.VideoPlayEvent;
@@ -27,29 +31,25 @@ import com.watchtogether.dto.event.VideoSeekEvent;
 import com.watchtogether.dto.event.VideoUrlChangeEvent;
 import com.watchtogether.dto.event.ChatMessageEvent;
 
+@Slf4j
 @Component
 public class SocketEventHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(SocketEventHandler.class);
-
-    private final SocketIOServer socketServer;
-    private final RedisUtil redisUtil;
-    private final RoomService roomService;
-    private final SessionService sessionService;
-
-    @Autowired
-    public SocketEventHandler(SocketIOServer socketServer, RedisUtil redisUtil,
-                             RoomService roomService, SessionService sessionService) {
-        this.socketServer = socketServer;
-        this.redisUtil = redisUtil;
-        this.roomService = roomService;
-        this.sessionService = sessionService;
-    }
+    @Resource
+    public SocketIOServer socketServer;
+    @Resource
+    public RedisUtil redisUtil;
+    @Resource
+    public RoomService roomService;
+    @Resource
+    public SessionService sessionService;
+    @Resource
+    public ChatMessageRepository chatMessageRepository;
 
     @OnConnect
     public void onConnect(SocketIOClient client) {
         String socketId = client.getSessionId().toString();
-        logger.info("Client connected: {}", socketId);
+        log.info("Client connected: {}", socketId);
         
         // Store socket connection mapping
         Map<String, String> socketMapping = new HashMap<>();
@@ -59,9 +59,10 @@ public class SocketEventHandler {
     }
 
     @OnDisconnect
+    @Transactional
     public void onDisconnect(SocketIOClient client) {
         String socketId = client.getSessionId().toString();
-        logger.info("Client disconnected: {}", socketId);
+        log.info("Client disconnected: {}", socketId);
         
         // Remove socket mapping
         redisUtil.delete(RedisUtil.KEY_PREFIX_SOCKET + socketId);
@@ -98,7 +99,7 @@ public class SocketEventHandler {
                         Long roomId = Long.parseLong(roomIdStr);
                         roomService.updateRoomActivity(roomId);
                     } catch (NumberFormatException e) {
-                        logger.warn("Invalid room ID format: {}", roomIdStr);
+                        log.warn("Invalid room ID format: {}", roomIdStr);
                     }
                 }
             }
@@ -109,12 +110,13 @@ public class SocketEventHandler {
     }
 
     @OnEvent("join-room")
+    @Transactional
     public void onJoinRoom(SocketIOClient client, JoinRoomEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
         String roomCode = data.getRoomId();
         String sessionId = data.getSessionId();
         
-        logger.info("Client {} joining room {} with session {}", socketId, roomCode, sessionId);
+        log.info("Client {} joining room {} with session {}", socketId, roomCode, sessionId);
         
         if (roomCode == null || roomCode.trim().isEmpty()) {
             if (ackSender.isAckRequested()) {
@@ -201,11 +203,12 @@ public class SocketEventHandler {
     }
 
     @OnEvent("leave-room")
+    @Transactional
     public void onLeaveRoom(SocketIOClient client, LeaveRoomEvent data, AckRequest ackSender) {
         String socketId = client.getSessionId().toString();
         String roomCode = data.getRoomId();
         
-        logger.info("Client {} leaving room {}", socketId, roomCode);
+        log.info("Client {} leaving room {}", socketId, roomCode);
         
         // Get socket mapping from Redis to get sessionId and roomId
         Map<String, String> socketMapping = redisUtil.get(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
@@ -245,7 +248,7 @@ public class SocketEventHandler {
                     Long roomId = Long.parseLong(roomIdStr);
                     roomService.updateRoomActivity(roomId);
                 } catch (NumberFormatException e) {
-                    logger.warn("Invalid room ID format: {}", roomIdStr);
+                    log.warn("Invalid room ID format: {}", roomIdStr);
                 }
             }
         }
@@ -269,7 +272,7 @@ public class SocketEventHandler {
         String roomId = data.getRoomId();
         Double time = data.getTime();
         
-        logger.info("Video play in room {} at time {} from client {}", roomId, time, socketId);
+        log.info("Video play in room {} at time {} from client {}", roomId, time, socketId);
         
         if (roomId != null && !roomId.trim().isEmpty()) {
             // Store playback state in Redis
@@ -302,7 +305,7 @@ public class SocketEventHandler {
         String socketId = client.getSessionId().toString();
         String roomId = data.getRoomId();
         
-        logger.info("Video pause in room {} from client {}", roomId, socketId);
+        log.info("Video pause in room {} from client {}", roomId, socketId);
         
         if (roomId != null && !roomId.trim().isEmpty()) {
             // Store playback state in Redis
@@ -334,7 +337,7 @@ public class SocketEventHandler {
         String roomId = data.getRoomId();
         Double time = data.getTime();
         
-        logger.info("Video seek in room {} to time {} from client {}", roomId, time, socketId);
+        log.info("Video seek in room {} to time {} from client {}", roomId, time, socketId);
         
         if (roomId != null && !roomId.trim().isEmpty() && time != null) {
             // Update playback state in Redis
@@ -366,7 +369,7 @@ public class SocketEventHandler {
         String roomId = data.getRoomId();
         String url = data.getUrl();
         
-        logger.info("Video URL change in room {} to {} from client {}", roomId, url, socketId);
+        log.info("Video URL change in room {} to {} from client {}", roomId, url, socketId);
         
         if (roomId != null && !roomId.trim().isEmpty() && url != null) {
             // Store room video URL in Redis
@@ -399,24 +402,62 @@ public class SocketEventHandler {
         String message = data.getMessage();
         String sender = data.getSender();
         
-        logger.info("Chat message in room {} from {}: {}", roomId, sender, message);
+        log.info("Chat message in room {} from {}: {}", roomId, sender, message);
         
-        if (roomId != null && !roomId.trim().isEmpty() && message != null && !message.trim().isEmpty()) {
-            // TODO: Save message to database
-            // For now, just broadcast
+        if (roomId == null || roomId.trim().isEmpty()) {
+            sendAckError(ackSender, "Room ID is required");
+            return;
+        }
+        
+        if (message == null || message.trim().isEmpty()) {
+            sendAckError(ackSender, "Message cannot be empty");
+            return;
+        }
+        
+        if (message.length() > 1000) {
+            sendAckError(ackSender, "Message too long (max 1000 characters)");
+            return;
+        }
+        
+        try {
+            ChatMessage chatMessage = new ChatMessage();
+            chatMessage.setRoomId(Long.parseLong(roomId));
+            chatMessage.setSessionId(socketId);
+            chatMessage.setContent(message);
+            chatMessage.setMessageType("text");
+            chatMessage = chatMessageRepository.save(chatMessage);
             
             Map<String, Object> chatEvent = new HashMap<>();
+            chatEvent.put("id", chatMessage.getId());
             chatEvent.put("message", message);
             chatEvent.put("sender", sender != null ? sender : "Anonymous");
             chatEvent.put("socketId", socketId);
-            chatEvent.put("timestamp", System.currentTimeMillis());
+            chatEvent.put("timestamp", chatMessage.getCreatedAt());
             
-            // Broadcast to all clients in room (including sender)
             socketServer.getRoomOperations(roomId).sendEvent("chat:message", chatEvent);
+            
+            sendAckSuccess(ackSender, new HashMap<>());
+        } catch (NumberFormatException e) {
+            log.warn("Invalid room ID format: {}", roomId);
+            sendAckError(ackSender, "Invalid room ID");
+        } catch (Exception e) {
+            log.error("Failed to save chat message: {}", e.getMessage());
+            sendAckError(ackSender, "Failed to save message");
         }
-        
+    }
+    
+    private void sendAckError(AckRequest ackSender, String message) {
         if (ackSender.isAckRequested()) {
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", message);
+            ackSender.sendAckData(error);
+        }
+    }
+    
+    private void sendAckSuccess(AckRequest ackSender, Map<String, Object> data) {
+        if (ackSender.isAckRequested()) {
+            Map<String, Object> response = new HashMap<>(data);
             response.put("success", true);
             ackSender.sendAckData(response);
         }

@@ -20,8 +20,21 @@ public class FileService {
     private String uploadDir;
 
     public String saveFile(MultipartFile file, String fileId, String type) throws IOException {
+        if (!fileId.matches("^[a-zA-Z0-9_-]+$")) {
+            throw new IllegalArgumentException("Invalid file ID format");
+        }
+        
+        if (!type.equals("emoji") && !type.equals("video")) {
+            throw new IllegalArgumentException("Invalid file type");
+        }
+        
         String subDir = type.equals("emoji") ? "emojis" : "videos";
-        Path uploadPath = Paths.get(uploadDir, subDir);
+        Path uploadPath = Paths.get(uploadDir, subDir).normalize();
+        
+        Path basePath = Paths.get(uploadDir).normalize();
+        if (!uploadPath.startsWith(basePath)) {
+            throw new SecurityException("Path traversal attempt detected");
+        }
         
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
@@ -30,11 +43,18 @@ public class FileService {
         String extension = "";
         String originalFilename = file.getOriginalFilename();
         if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+            if (!extension.matches("\\.(mp4|webm|mkv|mov|avi|png|jpg|gif|jpeg)$")) {
+                throw new IllegalArgumentException("Invalid file extension");
+            }
         }
 
         String filename = fileId + extension;
-        Path filePath = uploadPath.resolve(filename);
+        Path filePath = uploadPath.resolve(filename).normalize();
+        
+        if (!filePath.startsWith(uploadPath)) {
+            throw new SecurityException("Path traversal attempt detected");
+        }
         
         Files.copy(file.getInputStream(), filePath);
         

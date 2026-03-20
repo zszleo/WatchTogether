@@ -39,4 +39,8 @@ public interface SessionRepository extends JpaRepository<Session, String> {
     @Modifying
     @Query("UPDATE Session s SET s.roomId = null, s.lastSeenAt = :now WHERE s.id = :sessionId")
     void leaveRoom(@Param("sessionId") String sessionId, @Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE Session s SET s.lastSeenAt = :now WHERE s.id = :sessionId")
+    void updateLastSeen(@Param("sessionId") String sessionId, @Param("now") LocalDateTime now);
 }

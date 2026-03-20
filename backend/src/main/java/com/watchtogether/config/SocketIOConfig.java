@@ -33,6 +33,9 @@ public class SocketIOConfig {
     @Value("${socketio.tcp-keepalive:true}")
     private boolean tcpKeepAlive;
 
+    @Value("${socketio.allowed-origins:*}")
+    private String allowedOrigins;
+
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
@@ -45,8 +48,7 @@ public class SocketIOConfig {
         // config.setTcpNoDelay(tcpNoDelay); // Not available in netty-socketio 2.0.11
         // config.setTcpKeepAlive(tcpKeepAlive); // Not available in netty-socketio 2.0.11
         
-        // Allow all origins for development (adjust for production)
-        config.setOrigin("*");
+        config.setOrigin(allowedOrigins);
         
         return new SocketIOServer(config);
     }

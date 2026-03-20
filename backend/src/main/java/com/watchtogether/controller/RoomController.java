@@ -3,8 +3,10 @@ package com.watchtogether.controller;
 import com.watchtogether.annotation.SessionId;
 import com.watchtogether.dto.req.CreateRoomReq;
 import com.watchtogether.dto.resp.ApiResp;
+import com.watchtogether.dto.resp.ChatMessageResp;
 import com.watchtogether.dto.resp.RoomResp;
 import com.watchtogether.model.Room;
+import com.watchtogether.service.ChatMessageService;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ public class RoomController {
     private RoomService roomService;
     @Resource
     private SessionService sessionService;
+    @Resource
+    private ChatMessageService chatMessageService;
 
     @PostMapping
     @Operation(
@@ -177,7 +181,7 @@ public class RoomController {
         summary = "获取聊天消息",
         description = "获取房间的聊天消息历史，支持分页"
     )
-    public ResponseEntity<ApiResp<?>> getChatMessages(
+    public ResponseEntity<ApiResp<List<ChatMessageResp>>> getChatMessages(
             @PathVariable 
             @Parameter(description = "房间ID", example = "123") 
             Long roomId,
@@ -185,7 +189,7 @@ public class RoomController {
             @Parameter(description = "页码（从0开始）", example = "0") 
             int page,
             @RequestParam(defaultValue = "50") 
-            @Parameter(description = "每页大小", example = "50") 
+            @Parameter(description = "每页大小，最大100", example = "50") 
             int size,
             @SessionId(required = false)
             @Parameter(description = "用户会话ID（访问私有房间时必需）", example = "sess_abc123def456") 
@@ -197,13 +201,12 @@ public class RoomController {
         }
         
         Room room = roomOpt.get();
-        // Check access
         if (!room.getIsPublic() && sessionId == null) {
             return new ResponseEntity<>(ApiResp.unauthorized("Access denied"), HttpStatus.UNAUTHORIZED);
         }
         
-        // TODO: Implement chat message retrieval
-        return ResponseEntity.ok(ApiResp.success("Chat messages endpoint - to be implemented"));
+        List<ChatMessageResp> messages = chatMessageService.getChatMessages(roomId, page, size);
+        return ResponseEntity.ok(ApiResp.success(messages));
     }
 
     private RoomResp mapToRoomResponse(Room room) {
