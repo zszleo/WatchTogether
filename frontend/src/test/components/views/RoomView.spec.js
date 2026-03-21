@@ -245,7 +245,7 @@ describe('RoomView', () => {
         history: createWebHistory(),
         routes: [
           { path: '/', component: { template: '<div>Home</div>' } },
-          { path: '/room/:roomId', component: RoomView }
+    { path: '/room/:roomCode', component: RoomView }
         ]
       })
       

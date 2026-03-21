@@ -65,16 +65,6 @@
  * @property {any} data - OK
  */
 /**
- * 根据昵称获取表情 响应数据
- * @typedef {Object} getEmojisByNicknameResponse
- * @property {any} data - OK
- */
-/**
- * 根据昵称添加表情 响应数据
- * @typedef {Object} addEmojiByNicknameResponse
- * @property {any} data - OK
- */
-/**
  * 获取会话信息 响应数据
  * @typedef {Object} getSessionResponse
  * @property {any} data - OK
@@ -132,15 +122,5 @@
 /**
  * 删除文件 响应数据
  * @typedef {Object} deleteFileResponse
- * @property {any} data - OK
- */
-/**
- * 获取默认表情 响应数据
- * @typedef {Object} getDefaultEmojisResponse
- * @property {any} data - OK
- */
-/**
- * 根据昵称删除表情 响应数据
- * @typedef {Object} deleteEmojiByNicknameResponse
  * @property {any} data - OK
  */

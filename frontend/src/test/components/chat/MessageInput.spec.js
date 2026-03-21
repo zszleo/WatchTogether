@@ -116,14 +116,14 @@ describe('MessageInput', () => {
     it('点击表情按钮应该显示表情选择器', async () => {
       await wrapper.find('.btn-emoji').trigger('click')
       
-      expect(wrapper.find('.emoji-picker-enhanced-wrapper').exists()).toBe(true)
+      expect(wrapper.find('.emoji-picker-wrapper').exists()).toBe(true)
     })
 
     it('再次点击表情按钮应该隐藏表情选择器', async () => {
       await wrapper.find('.btn-emoji').trigger('click')
       await wrapper.find('.btn-emoji').trigger('click')
       
-      expect(wrapper.find('.emoji-picker-enhanced-wrapper').exists()).toBe(false)
+      expect(wrapper.find('.emoji-picker-wrapper').exists()).toBe(false)
     })
 
     it('选择表情应该插入到输入框', async () => {
@@ -145,7 +145,7 @@ describe('MessageInput', () => {
       
       await flushPromises()
       
-      expect(wrapper.find('.emoji-picker-enhanced-wrapper').exists()).toBe(false)
+      expect(wrapper.find('.emoji-picker-wrapper').exists()).toBe(false)
     })
   })
 })

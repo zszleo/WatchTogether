@@ -26,9 +26,6 @@ public class Session {
     @Column(name = "room_id")
     private Long roomId;
 
-    @Column(name = "is_online", nullable = false)
-    private Boolean isOnline = false;
-
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 

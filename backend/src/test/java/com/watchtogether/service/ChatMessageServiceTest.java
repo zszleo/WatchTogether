@@ -103,7 +103,7 @@ class ChatMessageServiceTest {
             return msg;
         });
 
-        ChatMessage result = chatMessageService.saveMessage(100L, "session-123", "Hello", "text");
+        ChatMessage result = chatMessageService.saveMessage(100L, "session-123","test_user", "Hello", "text");
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -126,7 +126,7 @@ class ChatMessageServiceTest {
             return msg;
         });
 
-        chatMessageService.saveMessage(100L, "session-123", "Hello", null);
+        chatMessageService.saveMessage(100L, "session-123","test_user", "Hello", null);
 
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertEquals("text", messageCaptor.getValue().getMessageType());

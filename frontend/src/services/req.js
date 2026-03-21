@@ -27,16 +27,6 @@
  * @property {string} type - 可选 - 文件类型（video/image等）
  */
 /**
- * 根据昵称获取表情 请求参数
- * @typedef {Object} getEmojisByNicknameRequest
- * @property {string} nickname - 必填 - 用户昵称
- */
-/**
- * 根据昵称添加表情 请求参数
- * @typedef {Object} addEmojiByNicknameRequest
- * @property {string} nickname - 必填 - 用户昵称
- */
-/**
  * 获取会话信息 请求参数
  * @typedef {Object} getSessionRequest
  * @property {string} sessionId - 必填 - 会话ID
@@ -92,10 +82,4 @@
  * 删除文件 请求参数
  * @typedef {Object} deleteFileRequest
  * @property {string} fileId - 必填 - 文件ID
- */
-/**
- * 根据昵称删除表情 请求参数
- * @typedef {Object} deleteEmojiByNicknameRequest
- * @property {string} nickname - 必填 - 用户昵称
- * @property {integer} emojiId - 必填 - 表情ID
  */

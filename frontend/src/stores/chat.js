@@ -15,14 +15,8 @@ export const useChatStore = defineStore('chat', () => {
   
   // 添加消息
   function addMessage(msg) {
-    // 检查是否已存在相同内容、发送者和时间戳的消息（防止重复添加）
-    const isDuplicate = messages.value.some(existingMsg => 
-      existingMsg.content === msg.content &&
-      existingMsg.senderId === msg.senderId &&
-      existingMsg.timestamp === msg.timestamp
-    )
-    
-    if (isDuplicate) {
+    // 检查是否已存在相同 id 的消息（防止重复添加）
+    if (msg.id && messages.value.some(existingMsg => existingMsg.id === msg.id)) {
       return
     }
     
@@ -48,22 +42,22 @@ export const useChatStore = defineStore('chat', () => {
   }
   
   // 加载历史消息
-  async function loadHistory(roomCode, page = 1) {
+  async function loadHistory(roomCode, page = 0) {
     loading.value = true
     try {
       const resp = await RoomApi.getChatMessages(roomCode, { page, size: 20 })
-      const data = resp.data
-      const historicalMessages = (data.messages || []).map(msg => ({
+      const messagesList = resp.data || []
+      const historicalMessages = messagesList.map(msg => ({
         id: msg.id,
         content: msg.content,
         type: msg.messageType,
         senderId: msg.sessionId,
         senderNickname: msg.senderNickname,
-        timestamp: msg.timestamp,
+        timestamp: msg.createdAt || msg.timestamp,
         createdAt: msg.createdAt
       }))
       
-      if (page === 1) {
+      if (page === 0) {
         messages.value = historicalMessages
       } else {
         messages.value = [...historicalMessages, ...messages.value]

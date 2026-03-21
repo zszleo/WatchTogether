@@ -36,9 +36,12 @@ export const useUserStore = defineStore('user', () => {
   }
   
   // 创建会话
-  async function createSession(nick) {
+  async function createSession(nick, avatarEmoji = '👤') {
     const nicknameToUse = nick || `游客${Math.floor(Math.random() * 10000)}`
-    const resp = await SessionApi.createSession({ nickname: nicknameToUse })
+    const resp = await SessionApi.createSession({ 
+      nickname: nicknameToUse,
+      avatar: avatarEmoji
+    })
     const data = resp.data
     
     sessionId.value = data.id

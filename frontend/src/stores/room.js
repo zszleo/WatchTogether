@@ -1,6 +1,6 @@
 // frontend/src/stores/room.js
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { RoomApi, SessionApi } from '@/services/api'
 import { socketService } from '@/services/socket'
 
@@ -22,7 +22,6 @@ export const useRoomStore = defineStore('room', () => {
   // 创建房间
   async function createRoom(data) {
     const resp = await RoomApi.createRoom(data)
-    currentRoom.value = resp.data
     
     // 记录创建历史
     if (data.creatorSessionId) {
@@ -33,20 +32,26 @@ export const useRoomStore = defineStore('room', () => {
       }
     }
     
-    socketService.connect()
-    setTimeout(() => {
-      // 使用 room.code 而不是 room.id
-      socketService.joinRoom(resp.data.code, data.creatorSessionId)
-    }, 500)
+    // 先连接Socket，再设置currentRoom
+    console.log('[RoomStore] Connecting socket...')
+    await socketService.connect()
+    console.log('[RoomStore] Socket connected')
+    
+    // 设置currentRoom，这会触发ChatPanel的watch
+    currentRoom.value = resp.data
     
     return resp.data
   }
   
   // 加入房间
   async function joinRoom(roomCode, sessionId = null) {
-    const resp = await RoomApi.getRoomByCode(roomCode, { sessionId })
+    // 如果已经在目标房间中，直接返回
+    if (currentRoom.value?.code === roomCode) {
+      return currentRoom.value
+    }
+    
+    const resp = await RoomApi.getRoom(roomCode, { sessionId })
     const room = resp.data
-    currentRoom.value = room
     
     // 记录加入历史
     if (sessionId) {
@@ -57,15 +62,14 @@ export const useRoomStore = defineStore('room', () => {
       }
     }
     
-    // 连接Socket并加入
-    socketService.connect()
+    // 先连接Socket，再设置currentRoom
+    // 这样ChatPanel触发时socket已经连接
+    console.log('[RoomStore] Connecting socket...')
+    await socketService.connect()
+    console.log('[RoomStore] Socket connected')
     
-    // 如果有sessionId，加入socket房间（使用 room.code）
-    if (sessionId) {
-      setTimeout(() => {
-        socketService.joinRoom(room.code, sessionId)
-      }, 500)
-    }
+    // 设置currentRoom，这会触发ChatPanel的watch
+    currentRoom.value = room
     
     return room
   }
@@ -85,10 +89,17 @@ export const useRoomStore = defineStore('room', () => {
     videoState.value = { ...videoState.value, ...state }
   }
   
-  // 添加用户
+  // 添加或更新用户（upsert）
   function addUser(user) {
-    if (!users.value.find(u => u.sessionId === user.sessionId)) {
+    console.log('[RoomStore] Adding/updating user:', user)
+    const existingIndex = users.value.findIndex(u => u.sessionId === user.sessionId)
+    if (existingIndex === -1) {
       users.value.push(user)
+      console.log('[RoomStore] User added, total users:', users.value.length)
+    } else {
+      // 合并现有用户信息和新信息，优先使用新数据
+      users.value[existingIndex] = { ...users.value[existingIndex], ...user }
+      console.log('[RoomStore] User updated, total users:', users.value.length)
     }
   }
   

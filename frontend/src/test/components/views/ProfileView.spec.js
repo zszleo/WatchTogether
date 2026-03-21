@@ -1,9 +1,25 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// Mock message module - must be before other imports
+vi.mock('@/utils/message', () => {
+  const mockMessage = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  }
+  return {
+    message: mockMessage,
+    default: mockMessage
+  }
+})
+
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ProfileView from '@/views/ProfileView.vue'
 import { useUserStore } from '@/stores/user'
+import { message } from '@/utils/message'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -241,8 +257,6 @@ describe('ProfileView', () => {
     })
 
     it('保存成功后应该显示提示', async () => {
-      vi.stubGlobal('alert', vi.fn())
-      
       wrapper = mount(ProfileView, {
         global: {
           plugins: [pinia, router]
@@ -257,9 +271,7 @@ describe('ProfileView', () => {
       
       await flushPromises()
       
-      expect(window.alert).toHaveBeenCalledWith('个人资料已更新')
-      
-      vi.stubGlobal('alert', vi.fn())
+      expect(message.success).toHaveBeenCalledWith('个人资料已更新')
     })
 
     it('保存时应该禁用按钮', async () => {

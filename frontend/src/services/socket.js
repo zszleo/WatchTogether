@@ -11,29 +11,48 @@ class SocketService {
   }
   
   connect() {
-    if (this.socket) return
+    // 如果 socket 已存在且已连接，直接返回
+    if (this.socket && this.socket.connected) {
+      console.log('[Socket] Already connected')
+      return Promise.resolve()
+    }
     
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:19090'
-    this.socket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    })
+    // 如果 socket 存在但未连接，先断开
+    if (this.socket) {
+      console.log('[Socket] Socket exists but not connected, reconnecting...')
+      this.socket.disconnect()
+      this.socket = null
+      // 注意：不清除 listeners，保留它们用于重连时重新注册
+    }
     
-    this.socket.on('connect', () => {
-      this.connected.value = true
-    })
-    
-    this.socket.on('disconnect', () => {
-      this.connected.value = false
-    })
-    
-    // 重新加入房间
-    this.socket.on('connect', () => {
-      if (this.currentRoom.value) {
-        this.joinRoom(this.currentRoom.value.roomCode, this.currentRoom.value.sessionId)
-      }
+    return new Promise((resolve) => {
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:19090'
+      console.log('[Socket] Connecting to:', socketUrl)
+      this.socket = io(socketUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      })
+      
+      this.socket.on('connect', () => {
+        console.log('[Socket] Connected successfully')
+        this.connected.value = true
+        
+        // 重新注册所有监听器（在重连后）
+        this.reregisterListeners()
+        
+        resolve()
+      })
+      
+      this.socket.on('disconnect', () => {
+        console.log('[Socket] Disconnected')
+        this.connected.value = false
+      })
+      
+      this.socket.on('connect_error', (error) => {
+        console.error('[Socket] Connection error:', error)
+      })
     })
   }
   
@@ -41,9 +60,20 @@ class SocketService {
     this.socket?.disconnect()
     this.socket = null
     this.connected.value = false
+    this.currentRoom.value = null
+    this.listeners.clear()
+  }
+
+  resetRoomState() {
+    console.log('[Socket] Resetting room state')
+    this.currentRoom.value = null
   }
   
   joinRoom(roomCode, sessionId) {
+    // 幂等性检查：如果已经在目标房间，跳过
+    if (this.currentRoom.value?.roomCode === roomCode) {
+      return
+    }
     this.currentRoom.value = { roomCode, sessionId }
     this.socket?.emit('join-room', { roomCode, sessionId })
   }
@@ -74,23 +104,45 @@ class SocketService {
   emitChatMessage(roomCode, content, type = 'text', senderId, senderNickname) {
     this.socket?.emit('chat:message', {
       roomCode,
-      content,
+      message: content,
+      sender: senderNickname,
       type,
       senderId,
-      senderNickname,
       timestamp: new Date().toISOString()
     })
   }
   
   // 事件监听
   on(event, callback) {
+    console.log(`[Socket] Registering listener for event: ${event}`)
+    // 先移除旧的监听器，避免重复
+    const existingCallback = this.listeners.get(event)
+    if (existingCallback) {
+      this.socket?.off(event, existingCallback)
+    }
     this.socket?.on(event, callback)
     this.listeners.set(event, callback)
+    console.log(`[Socket] Listener registered for event: ${event}, socket connected: ${this.socket?.connected}`)
   }
   
   off(event) {
-    this.socket?.off(event, this.listeners.get(event))
-    this.listeners.delete(event)
+    const callback = this.listeners.get(event)
+    if (callback) {
+      this.socket?.off(event, callback)
+      this.listeners.delete(event)
+    }
+  }
+
+  // 重新注册所有监听器（用于重连后）
+  reregisterListeners() {
+    if (!this.socket) return
+    
+    console.log('[Socket] Reregistering', this.listeners.size, 'listeners')
+    for (const [event, callback] of this.listeners) {
+      this.socket.off(event, callback) // 先移除旧的
+      this.socket.on(event, callback)  // 再注册新的
+      console.log('[Socket] Reregistered listener for:', event)
+    }
   }
   
   // 房间事件

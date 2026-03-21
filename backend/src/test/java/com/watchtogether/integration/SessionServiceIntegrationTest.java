@@ -56,7 +56,6 @@ class SessionServiceIntegrationTest {
         assertEquals(32, result.getId().length());
         assertEquals(nickname, result.getNickname());
         assertEquals(avatar, result.getAvatar());
-        assertFalse(result.getIsOnline());
         assertNotNull(result.getCreatedAt());
         assertNotNull(result.getUpdatedAt());
         assertNotNull(result.getLastSeenAt());
@@ -148,7 +147,6 @@ class SessionServiceIntegrationTest {
         Session updated = sessionRepository.findById(created.getId()).orElse(null);
         assertNotNull(updated);
         assertEquals(socketId, updated.getSocketId());
-        assertTrue(updated.getIsOnline());
     }
 
     @Test

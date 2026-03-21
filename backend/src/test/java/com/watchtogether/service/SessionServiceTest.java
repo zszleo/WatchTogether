@@ -58,7 +58,6 @@ class SessionServiceTest {
         mockSession.setId(sessionId);
         mockSession.setNickname(nickname);
         mockSession.setAvatar(avatar);
-        mockSession.setIsOnline(false);
         mockSession.setCreatedAt(LocalDateTime.now());
         mockSession.setUpdatedAt(LocalDateTime.now());
         mockSession.setLastSeenAt(LocalDateTime.now());
@@ -82,7 +81,6 @@ class SessionServiceTest {
         assertEquals(32, result.getId().length()); // UUID without dashes, truncated to 32 chars
         assertEquals(nickname, result.getNickname());
         assertEquals(avatar, result.getAvatar());
-        assertFalse(result.getIsOnline());
         assertNotNull(result.getCreatedAt());
         assertNotNull(result.getUpdatedAt());
         assertNotNull(result.getLastSeenAt());
@@ -267,7 +265,6 @@ class SessionServiceTest {
         
         Session savedSession = sessionCaptor.getValue();
         assertEquals(socketId, savedSession.getSocketId());
-        assertTrue(savedSession.getIsOnline());
         assertNotNull(savedSession.getLastSeenAt());
         
         verify(redisUtil).setSession(eq(sessionId), any(Map.class));

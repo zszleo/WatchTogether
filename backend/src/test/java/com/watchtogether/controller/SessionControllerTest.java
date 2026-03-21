@@ -55,7 +55,6 @@ class SessionControllerTest {
         mockSession.setId("session-123");
         mockSession.setNickname("TestUser");
         mockSession.setAvatar("avatar1");
-        mockSession.setIsOnline(true);
         mockSession.setCreatedAt(LocalDateTime.now());
         mockSession.setLastSeenAt(LocalDateTime.now());
 
@@ -248,7 +247,6 @@ class SessionControllerTest {
         newSession.setId("new-session-123");
         newSession.setNickname("TestUser");
         newSession.setAvatar("avatar.jpg");
-        newSession.setIsOnline(false);
         newSession.setCreatedAt(LocalDateTime.now());
         newSession.setLastSeenAt(LocalDateTime.now());
 
@@ -279,7 +277,6 @@ class SessionControllerTest {
         newSession.setId("new-session-123");
         newSession.setNickname("TestUser");
         newSession.setAvatar(null);
-        newSession.setIsOnline(false);
         newSession.setCreatedAt(LocalDateTime.now());
         newSession.setLastSeenAt(LocalDateTime.now());
 

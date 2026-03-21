@@ -1,4 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// Mock message module - must be before other imports
+vi.mock('@/utils/message', () => {
+  const mockMessage = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  }
+  return {
+    message: mockMessage,
+    default: mockMessage
+  }
+})
+
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
@@ -6,6 +21,7 @@ import { useRoomStore } from '@/stores/room'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import { socketService } from '@/services/socket'
+import { message } from '@/utils/message'
 
 vi.mock('@/services/api', () => ({
   RoomApi: {
@@ -146,7 +162,7 @@ describe('ChatPanel', () => {
     })
 
     it('应该显示房间ID', () => {
-      expect(wrapper.find('.room-id').text()).toContain('test-room-123')
+      expect(wrapper.find('.room-id').text()).toContain('ABC123')
     })
 
     it('应该显示在线用户数量', () => {
@@ -241,7 +257,7 @@ describe('ChatPanel', () => {
       await messageInput.vm.$emit('send', '测试消息', 'text')
       
       expect(socketService.emitChatMessage).toHaveBeenCalledWith(
-        'test-room-123',
+        'ABC123',
         '测试消息',
         'text',
         'session-123',
@@ -271,7 +287,7 @@ describe('ChatPanel', () => {
       await messageInput.vm.$emit('send', 'http://test.com/image.jpg', 'image')
       
       expect(socketService.emitChatMessage).toHaveBeenCalledWith(
-        'test-room-123',
+        'ABC123',
         'http://test.com/image.jpg',
         'image',
         'session-123',
@@ -316,7 +332,6 @@ describe('ChatPanel', () => {
       socketService._onUserJoined(testUser)
       
       expect(roomStore.addUser).toHaveBeenCalledWith(testUser)
-      expect(chatStore.addSystemMessage).toHaveBeenCalledWith('新用户 加入了房间')
     })
 
     it('应该处理用户离开事件', () => {
@@ -331,7 +346,6 @@ describe('ChatPanel', () => {
       socketService._onUserLeft(testUser)
       
       expect(roomStore.removeUser).toHaveBeenCalledWith('session-456')
-      expect(chatStore.addSystemMessage).toHaveBeenCalledWith('离开用户 离开了房间')
     })
   })
 
@@ -366,9 +380,9 @@ describe('ChatPanel', () => {
       await copyButton.trigger('click')
       
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        'http://localhost:3000/join/test-room-123'
+        'http://localhost:3000/join/ABC123'
       )
-      expect(window.alert).toHaveBeenCalledWith('邀请链接已复制')
+      expect(message.success).toHaveBeenCalledWith('邀请链接已复制')
     })
 
     it('复制失败时应该处理错误', async () => {
@@ -378,16 +392,15 @@ describe('ChatPanel', () => {
           writeText: vi.fn().mockRejectedValue(clipboardError)
         }
       })
-      vi.stubGlobal('alert', vi.fn())
       
       const copyButton = wrapper.find('.btn-copy-link')
       await copyButton.trigger('click')
       await flushPromises()
       
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        'http://localhost:3000/join/test-room-123'
+        'http://localhost:3000/join/ABC123'
       )
-      expect(window.alert).toHaveBeenCalledWith('复制失败，请手动复制链接')
+      expect(message.error).toHaveBeenCalledWith('复制失败，请手动复制链接')
     })
   })
 

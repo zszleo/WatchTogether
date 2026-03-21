@@ -17,8 +17,6 @@ public class SessionResp {
     private String nickname;
     @Schema(description = "头像URL", example = "avatar1.png")
     private String avatar;
-    @Schema(description = "是否在线", example = "true")
-    private Boolean isOnline;
     
     @Schema(description = "当前所在房间码", example = "ABC123")
     private String roomCode;

@@ -169,25 +169,13 @@ describe('Chat Store', () => {
 
   describe('loadHistory', () => {
     it('应该加载历史消息', async () => {
-      const mockMessages = {
-        messages: [
-          {
-            id: 1,
-            content: '历史消息1',
-            messageType: 'text',
-            sessionId: 'user1',
-            senderNickname: '用户1',
-            timestamp: '2024-01-01T10:00:00Z'
-          },
-          {
-            id: 2,
-            content: '历史消息2',
-            messageType: 'text',
-            sessionId: 'user2',
-            senderNickname: '用户2',
-            timestamp: '2024-01-01T10:01:00Z'
-          }
-        ]
+const mockMessages = {
+        data: {
+          data: [
+            { id: 1, content: '历史消息1', messageType: 'text', sessionId: 'user1' },
+            { id: 2, content: '历史消息2', messageType: 'text', sessionId: 'user1' }
+          ]
+        }
       }
 
       const { RoomApi } = await import('@/services/api')
@@ -195,7 +183,7 @@ describe('Chat Store', () => {
 
       await chatStore.loadHistory('room_123')
 
-      expect(RoomApi.getChatMessages).toHaveBeenCalledWith('room_123', { page: 1, size: 20 })
+      expect(RoomApi.getChatMessages).toHaveBeenCalledWith('room_123', { page: 0, size: 20 })
       expect(chatStore.messages).toHaveLength(2)
       expect(chatStore.messages[0].content).toBe('历史消息1')
       expect(chatStore.messages[1].content).toBe('历史消息2')
@@ -205,15 +193,17 @@ describe('Chat Store', () => {
       chatStore.messages = [{ id: 999, content: '现有消息' }]
 
       const mockMessages = {
-        messages: [
-          { id: 1, content: '历史消息1', messageType: 'text', sessionId: 'user1' }
-        ]
+        data: {
+          data: [
+            { id: 1, content: '历史消息1', messageType: 'text', sessionId: 'user1' }
+          ]
+        }
       }
 
       const { RoomApi } = await import('@/services/api')
       RoomApi.getChatMessages.mockResolvedValue(mockMessages)
 
-      await chatStore.loadHistory('room_123', 1)
+      await chatStore.loadHistory('room_123', 0)
 
       expect(chatStore.messages).toHaveLength(1)
       expect(chatStore.messages[0].content).toBe('历史消息1')
@@ -223,15 +213,17 @@ describe('Chat Store', () => {
       chatStore.messages = [{ id: 999, content: '现有消息' }]
 
       const mockMessages = {
-        messages: [
-          { id: 1, content: '历史消息1', messageType: 'text', sessionId: 'user1' }
-        ]
+        data: {
+          data: [
+            { id: 1, content: '历史消息1', messageType: 'text', sessionId: 'user1' }
+          ]
+        }
       }
 
       const { RoomApi } = await import('@/services/api')
       RoomApi.getChatMessages.mockResolvedValue(mockMessages)
 
-      await chatStore.loadHistory('room_123', 2)
+      await chatStore.loadHistory('room_123', 1)
 
       expect(chatStore.messages).toHaveLength(2)
       expect(chatStore.messages[0].content).toBe('历史消息1')
@@ -239,7 +231,7 @@ describe('Chat Store', () => {
     })
 
     it('应该设置加载状态', async () => {
-      const mockMessages = { messages: [] }
+      const mockMessages = { data: { data: [] } }
       const { RoomApi } = await import('@/services/api')
       
       let resolvePromise

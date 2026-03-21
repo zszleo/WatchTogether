@@ -55,7 +55,6 @@ public class SessionController {
             session.getId(),
             session.getNickname(),
             session.getAvatar(),
-            session.getIsOnline(),
             getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()
@@ -85,7 +84,6 @@ public class SessionController {
             session.getId(),
             session.getNickname(),
             session.getAvatar(),
-            session.getIsOnline(),
             getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()
@@ -158,7 +156,6 @@ public class SessionController {
             session.getId(),
             session.getNickname(),
             session.getAvatar(),
-            session.getIsOnline(),
             getRoomCode(session.getRoomId()),
             session.getCreatedAt(),
             session.getLastSeenAt()

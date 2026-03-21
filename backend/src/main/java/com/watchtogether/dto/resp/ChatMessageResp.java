@@ -18,6 +18,9 @@ public class ChatMessageResp {
     @Schema(description = "会话ID", example = "sess_abc123def456")
     private String sessionId;
     
+    @Schema(description = "发送者昵称", example = "用户A")
+    private String senderNickname;
+    
     @Schema(description = "消息内容", example = "这是一条测试消息")
     private String content;
     

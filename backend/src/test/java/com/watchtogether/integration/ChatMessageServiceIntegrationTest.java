@@ -59,7 +59,7 @@ class ChatMessageServiceIntegrationTest {
         String content = "Hello, World!";
         String messageType = "text";
 
-        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, content, messageType);
+        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, "test_user",content, messageType);
 
         assertNotNull(result);
         assertNotNull(result.getId());
@@ -76,7 +76,7 @@ class ChatMessageServiceIntegrationTest {
 
     @Test
     void saveMessage_WithNullMessageType_ShouldDefaultToText() {
-        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, "Test message", null);
+        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, "test_user","Test message", null);
 
         assertEquals("text", result.getMessageType());
     }
@@ -86,7 +86,7 @@ class ChatMessageServiceIntegrationTest {
         String content = "🎉🎊";
         String messageType = "emoji";
 
-        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, content, messageType);
+        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId,"test_user", content, messageType);
 
         assertNotNull(result);
         assertEquals(content, result.getContent());
@@ -96,7 +96,7 @@ class ChatMessageServiceIntegrationTest {
     @Test
     void getChatMessages_WithMessages_ShouldReturnPaginatedResults() throws InterruptedException {
         for (int i = 0; i < 5; i++) {
-            chatMessageService.saveMessage(roomId, sessionId, "Message " + i, "text");
+            chatMessageService.saveMessage(roomId, sessionId, "test_user","Message " + i, "text");
             Thread.sleep(10);
         }
 
@@ -107,11 +107,11 @@ class ChatMessageServiceIntegrationTest {
 
     @Test
     void getChatMessages_ShouldBeOrderedByCreatedAtDescending() throws InterruptedException {
-        chatMessageService.saveMessage(roomId, sessionId, "First", "text");
+        chatMessageService.saveMessage(roomId, sessionId,"test_user","First", "text");
         Thread.sleep(10);
-        chatMessageService.saveMessage(roomId, sessionId, "Second", "text");
+        chatMessageService.saveMessage(roomId, sessionId,"test_user", "Second", "text");
         Thread.sleep(10);
-        chatMessageService.saveMessage(roomId, sessionId, "Third", "text");
+        chatMessageService.saveMessage(roomId, sessionId, "test_user","Third", "text");
 
         List<ChatMessageResp> result = chatMessageService.getChatMessages(roomId, 0, 10);
 
@@ -124,7 +124,7 @@ class ChatMessageServiceIntegrationTest {
     @Test
     void getChatMessages_WithPagination_ShouldRespectPageSize() {
         for (int i = 0; i < 10; i++) {
-            chatMessageService.saveMessage(roomId, sessionId, "Message " + i, "text");
+            chatMessageService.saveMessage(roomId, sessionId, "test_user","Message " + i, "text");
         }
 
         List<ChatMessageResp> page0 = chatMessageService.getChatMessages(roomId, 0, 3);
@@ -160,7 +160,7 @@ class ChatMessageServiceIntegrationTest {
     void saveMessage_WithLongContent_ShouldPersist() {
         String longContent = "A".repeat(1000);
 
-        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, longContent, "text");
+        ChatMessage result = chatMessageService.saveMessage(roomId, sessionId, "test_user",longContent, "text");
 
         assertEquals(longContent, result.getContent());
     }
@@ -171,9 +171,9 @@ class ChatMessageServiceIntegrationTest {
         String session2 = "session-2";
         String session3 = "session-3";
 
-        chatMessageService.saveMessage(roomId, session1, "From session 1", "text");
-        chatMessageService.saveMessage(roomId, session2, "From session 2", "text");
-        chatMessageService.saveMessage(roomId, session3, "From session 3", "text");
+        chatMessageService.saveMessage(roomId, session1, "test_user","From session 1", "text");
+        chatMessageService.saveMessage(roomId, session2, "test_user","From session 2", "text");
+        chatMessageService.saveMessage(roomId, session3,"test_user", "From session 3", "text");
 
         List<ChatMessageResp> result = chatMessageService.getChatMessages(roomId, 0, 10);
 
@@ -190,8 +190,8 @@ class ChatMessageServiceIntegrationTest {
             sessionId
         ).getId();
 
-        chatMessageService.saveMessage(roomId, sessionId, "Room 1 message", "text");
-        chatMessageService.saveMessage(room2Id, sessionId, "Room 2 message", "text");
+        chatMessageService.saveMessage(roomId, sessionId, "test_user","Room 1 message", "text");
+        chatMessageService.saveMessage(room2Id, sessionId, "test_user","Room 2 message", "text");
 
         List<ChatMessageResp> room1Messages = chatMessageService.getChatMessages(roomId, 0, 10);
         List<ChatMessageResp> room2Messages = chatMessageService.getChatMessages(room2Id, 0, 10);
@@ -204,7 +204,7 @@ class ChatMessageServiceIntegrationTest {
 
     @Test
     void saveMessage_ShouldMapToResponseCorrectly() {
-        ChatMessage saved = chatMessageService.saveMessage(roomId, sessionId, "Test content", "emoji");
+        ChatMessage saved = chatMessageService.saveMessage(roomId, sessionId, "test_user","Test content", "emoji");
 
         List<ChatMessageResp> messages = chatMessageService.getChatMessages(roomId, 0, 10);
 

@@ -8,6 +8,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.watchtogether.handler.SocketEventHandler;
 import com.watchtogether.model.Room;
 import com.watchtogether.repository.ChatMessageRepository;
+import com.watchtogether.service.ChatMessageService;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.utils.RedisUtil;
@@ -46,7 +47,7 @@ class SocketEventHandlerTest {
     @Mock
     private SessionService sessionService;
     @Mock
-    private ChatMessageRepository chatMessageRepository;
+    private ChatMessageService chatMessageService;
     @Mock
     private SocketIOClient client;
     @Mock
@@ -70,7 +71,7 @@ class SocketEventHandlerTest {
         socketEventHandler.redisUtil = redisUtil;
         socketEventHandler.roomService = roomService;
         socketEventHandler.sessionService = sessionService;
-        socketEventHandler.chatMessageRepository = chatMessageRepository;
+        socketEventHandler.chatMessageService = chatMessageService;
 
         UUID socketUuid = UUID.fromString(socketId);
         when(client.getSessionId()).thenReturn(socketUuid);
@@ -267,11 +268,11 @@ class SocketEventHandlerTest {
         savedMessage.setContent("Hello World");
         savedMessage.setSessionId(socketId);
         savedMessage.setCreatedAt(java.time.LocalDateTime.now());
-        when(chatMessageRepository.save(any(com.watchtogether.model.ChatMessage.class))).thenReturn(savedMessage);
+        when(chatMessageService.saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(savedMessage);
 
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
 
-        verify(chatMessageRepository).save(any(com.watchtogether.model.ChatMessage.class));
+        verify(chatMessageService).saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString());
         verify(socketServer.getRoomOperations("1")).sendEvent(eq("chat:message"), any(Map.class));
     }
 
@@ -281,7 +282,7 @@ class SocketEventHandlerTest {
         messageData.setRoomCode(null);
         messageData.setMessage("Hello");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
-        verify(chatMessageRepository, never()).save(any());
+        verify(chatMessageService, never()).saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -290,7 +291,7 @@ class SocketEventHandlerTest {
         messageData.setRoomCode("1");
         messageData.setMessage("");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
-        verify(chatMessageRepository, never()).save(any());
+        verify(chatMessageService, never()).saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -299,7 +300,7 @@ class SocketEventHandlerTest {
         messageData.setRoomCode("1");
         messageData.setMessage("a".repeat(1001));
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
-        verify(chatMessageRepository, never()).save(any());
+        verify(chatMessageService, never()).saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -308,7 +309,7 @@ class SocketEventHandlerTest {
         messageData.setRoomCode("invalid-id");
         messageData.setMessage("Hello");
         socketEventHandler.onChatMessage(client, messageData, ackRequest);
-        verify(chatMessageRepository, never()).save(any());
+        verify(chatMessageService, never()).saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -316,7 +317,7 @@ class SocketEventHandlerTest {
         ChatMessageEvent messageData = new ChatMessageEvent();
         messageData.setRoomCode("1");
         messageData.setMessage("Hello");
-        when(chatMessageRepository.save(any())).thenThrow(new RuntimeException("DB error"));
+        when(chatMessageService.saveMessage(anyLong(), anyString(), anyString(), anyString(), anyString())).thenThrow(new RuntimeException("DB error"));
         assertDoesNotThrow(() -> socketEventHandler.onChatMessage(client, messageData, ackRequest));
     }
 

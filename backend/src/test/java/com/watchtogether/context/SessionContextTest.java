@@ -84,7 +84,6 @@ class SessionContextTest {
         session.setId("test-session-123");
         session.setNickname("Test User");
         session.setAvatar("avatar.png");
-        session.setIsOnline(true);
         session.setCreatedAt(LocalDateTime.now());
         session.setUpdatedAt(LocalDateTime.now());
         session.setLastSeenAt(LocalDateTime.now());

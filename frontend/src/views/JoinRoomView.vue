@@ -20,6 +20,22 @@
         </div>
         
         <div class="form-group">
+          <label class="form-label">选择头像</label>
+          <div class="avatar-grid">
+            <button
+              v-for="emoji in avatarEmojis"
+              :key="emoji"
+              class="avatar-option"
+              :class="{ active: avatar === emoji }"
+              type="button"
+              @click="avatar = emoji"
+            >
+              {{ emoji }}
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-group">
           <label class="form-label">房间号</label>
           <input 
             v-model="roomCode"
@@ -73,10 +89,12 @@ const userStore = useUserStore()
 const roomStore = useRoomStore()
 
 const nickname = ref(userStore.nickname || '')
+const avatar = ref('👤')
 const roomCode = ref('')
 const loading = ref(false)
 const copied = ref(false)
 const linkInput = ref(null)
+const avatarEmojis = ['👤', '😀', '😎', '🤖', '🐱', '🐶', '🦊', '🐼', '🐯', '🦁', '🐨', '🐻']
 
 // 从URL参数获取房间号
 onMounted(() => {
@@ -107,7 +125,7 @@ async function handleJoin() {
   try {
     // 确保有会话
     if (!userStore.sessionId) {
-      await userStore.createSession(nickname.value)
+      await userStore.createSession(nickname.value, avatar.value)
     }
     
     // 加入房间
@@ -231,6 +249,33 @@ function copyLink() {
 .invite-link-box .input {
   flex: 1;
   font-size: 0.875rem;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.avatar-option {
+  padding: 12px;
+  font-size: 1.5rem;
+  background: var(--bg-secondary);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.avatar-option:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.1);
+}
+
+.avatar-option.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-secondary);
 }
 
 .btn-copy {

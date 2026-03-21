@@ -18,14 +18,8 @@ public interface SessionRepository extends JpaRepository<Session, String> {
 
     List<Session> findByRoomId(Long roomId);
 
-    List<Session> findByIsOnlineTrueAndLastSeenAtAfter(LocalDateTime threshold);
-
     @Modifying
-    @Query("UPDATE Session s SET s.isOnline = false, s.socketId = null WHERE s.lastSeenAt < :threshold")
-    void markOfflineSessions(@Param("threshold") LocalDateTime threshold);
-
-    @Modifying
-    @Query("UPDATE Session s SET s.socketId = :socketId, s.isOnline = true, s.lastSeenAt = :now WHERE s.id = :sessionId")
+    @Query("UPDATE Session s SET s.socketId = :socketId, s.lastSeenAt = :now WHERE s.id = :sessionId")
     void updateSocketInfo(@Param("sessionId") String sessionId, 
                           @Param("socketId") String socketId, 
                           @Param("now") LocalDateTime now);

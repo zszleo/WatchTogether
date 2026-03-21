@@ -1,5 +1,25 @@
 <template>
   <div class="page-room">
+    <div class="room-header">
+      <div class="header-left">
+        <button class="btn-leave" @click="leaveRoom">
+          <span class="leave-icon">&larr;</span>
+          离开房间
+        </button>
+      </div>
+      <div class="header-center">
+        <span class="room-playing-info">
+          <span class="room-name">{{ roomStore.currentRoom?.name }}</span>：正在播放【视频名称】
+        </span>
+      </div>
+      <div class="header-right">
+        <button class="btn-invite" @click="copyInviteLink">
+          邀请
+          <span class="room-code">{{ roomStore.currentRoom?.code }}</span>
+        </button>
+      </div>
+    </div>
+    
     <div class="room-layout">
       <main class="video-section">
         <VideoPlayer ref="videoPlayer" />
@@ -84,7 +104,19 @@ onMounted(async () => {
     // 如果没有会话，先创建
     if (!userStore.sessionId) {
       const nickname = `游客${Math.floor(Math.random() * 10000)}`
-      await userStore.createSession(nickname)
+      await userStore.createSession(nickname, '👤')
+    }
+    
+    // 如果 socket 未连接（可能是页面刷新），重置 socket 的房间状态
+    if (!socketService.socket?.connected) {
+      console.log('[RoomView] Socket not connected, resetting room state')
+      socketService.resetRoomState()
+    }
+    
+    // 如果已经在当前房间中，不需要重新加入
+    if (roomStore.currentRoom?.code === roomCode) {
+      // 确保 socket 监听器已设置（由 ChatPanel 处理）
+      return
     }
     
     // 加入房间
@@ -99,6 +131,21 @@ onUnmounted(() => {
   roomStore.leaveRoom()
   chatStore.clearMessages()
 })
+
+function leaveRoom() {
+  router.push('/')
+}
+
+async function copyInviteLink() {
+  if (!roomStore.currentRoom?.code) return
+  const link = `${window.location.origin}/join/${roomStore.currentRoom.code}`
+  try {
+    await navigator.clipboard.writeText(link)
+    message.success('邀请链接已复制')
+  } catch (error) {
+    message.error('复制失败，请手动复制链接')
+  }
+}
 
 function changeVideoUrl() {
   if (!videoUrlInput.value.trim()) return
@@ -120,11 +167,88 @@ function handleVideoUpload(event) {
 .page-room {
   min-height: 100%;
   background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-leave {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: all var(--transition-base);
+}
+
+.btn-leave:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.leave-icon {
+  font-size: 1rem;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.room-playing-info {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.room-playing-info .room-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.btn-invite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: all var(--transition-base);
+}
+
+.btn-invite:hover {
+  opacity: 0.9;
+}
+
+.room-code {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-mono);
 }
 
 .room-layout {
   display: flex;
-  height: 100%;
+  flex: 1;
+  height: calc(100vh - 56px);
 }
 
 .video-section {

@@ -332,57 +332,6 @@ export const FileApi = {
 };
 
 /**
- * EmojiApi API
- */
-export const EmojiApi = {
-  /**
- * 根据昵称获取表情
- * 根据用户昵称获取自定义的表情列表
- * @param {string} nickname - 用户昵称
- * @param {Object} [options={}] - 请求选项（如headers、timeout等）
- * @returns {Promise} Promise对象
- */
-  getEmojisByNickname: async (nickname, options = {}) => {
-    const path = `/api/emoji/user/${nickname}`;
-    return request(path, { method: 'GET', ...options });
-  },
-  /**
- * 根据昵称添加表情
- * 根据用户昵称添加自定义表情
- * @param {string} nickname - 用户昵称
- * @param {Object} data - 请求体数据
- * @param {Object} [options={}] - 请求选项（如headers、timeout等）
- * @returns {Promise} Promise对象
- */
-  addEmojiByNickname: async (nickname, data, options = {}) => {
-    const path = `/api/emoji/user/${nickname}`;
-    return request(path, { method: 'POST', data, ...options });
-  },
-  /**
- * 获取默认表情
- * 获取系统默认提供的表情列表
- * @param {Object} [options={}] - 请求选项（如headers、timeout等）
- * @returns {Promise} Promise对象
- */
-  getDefaultEmojis: async (options = {}) => {
-    const path = `/api/emoji/default`;
-    return request(path, { method: 'GET', ...options });
-  },
-  /**
- * 根据昵称删除表情
- * 根据用户昵称删除自定义表情
- * @param {string} nickname - 用户昵称
- * @param {integer} emojiId - 表情ID
- * @param {Object} [options={}] - 请求选项（如headers、timeout等）
- * @returns {Promise} Promise对象
- */
-  deleteEmojiByNickname: async (nickname, emojiId, options = {}) => {
-    const path = `/api/emoji/user/${nickname}/${emojiId}`;
-    return request(path, { method: 'DELETE', ...options });
-  },
-};
-
-/**
  * HealthApi API
  */
 export const HealthApi = {

@@ -12,7 +12,7 @@ const router = createRouter({
     { path: '/', component: HomeView },
     { path: '/create', component: { template: '<div>Create</div>' } },
     { path: '/join', component: { template: '<div>Join</div>' } },
-    { path: '/join/:roomId', component: { template: '<div>Join Room</div>' } },
+    { path: '/join/:roomCode', component: { template: '<div>Join Room</div>' } },
     { path: '/history', component: { template: '<div>History</div>' } },
     { path: '/profile', component: { template: '<div>Profile</div>' } }
   ]

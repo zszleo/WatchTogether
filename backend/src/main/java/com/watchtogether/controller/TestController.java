@@ -5,7 +5,6 @@ import com.watchtogether.repository.ChatMessageRepository;
 import com.watchtogether.repository.RoomRepository;
 import com.watchtogether.repository.SessionRepository;
 import com.watchtogether.repository.SessionHistoryRepository;
-import com.watchtogether.repository.EmojiRepository;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,9 +36,6 @@ public class TestController {
 
     @Resource
     private SessionHistoryRepository sessionHistoryRepository;
-
-    @Resource
-    private EmojiRepository emojiRepository;
 
     @Resource
     private SessionService sessionService;
@@ -98,7 +94,6 @@ public class TestController {
             sessionHistoryRepository.deleteAll();
             roomRepository.deleteAll();
             sessionRepository.deleteAll();
-            emojiRepository.deleteAll();
             return ResponseEntity.ok(ApiResp.success("所有测试数据已清理"));
         } catch (Exception e) {
             log.error("Failed to clear all test data", e);

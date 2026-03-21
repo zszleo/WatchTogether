@@ -20,6 +20,9 @@ public class ChatMessage {
     @Column(name = "session_id", nullable = false, length = 64)
     private String sessionId;
 
+    @Column(name = "sender_nickname", nullable = false, length = 50)
+    private String senderNickname;
+
     @Column(name = "message_type", nullable = false, length = 20)
     private String messageType = "text";
 

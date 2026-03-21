@@ -42,10 +42,11 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public ChatMessage saveMessage(Long roomId, String sessionId, String content, String messageType) {
+    public ChatMessage saveMessage(Long roomId, String sessionId, String senderNickname, String content, String messageType) {
         ChatMessage message = new ChatMessage();
         message.setRoomId(roomId);
         message.setSessionId(sessionId);
+        message.setSenderNickname(senderNickname);
         message.setContent(content);
         message.setMessageType(messageType != null ? messageType : "text");
         return chatMessageRepository.save(message);
@@ -55,6 +56,7 @@ public class ChatMessageService {
         ChatMessageResp resp = new ChatMessageResp();
         resp.setId(message.getId());
         resp.setSessionId(message.getSessionId());
+        resp.setSenderNickname(message.getSenderNickname());
         resp.setContent(message.getContent());
         resp.setMessageType(message.getMessageType());
         resp.setCreatedAt(message.getCreatedAt());

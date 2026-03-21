@@ -81,7 +81,7 @@ describe('Room Store', () => {
         description: '测试描述',
         creatorSessionId: 'session_123'
       })
-      expect(SessionApi.joinRoom).toHaveBeenCalledWith('session_123', 'room_123')
+      expect(SessionApi.joinRoom).toHaveBeenCalledWith('session_123', 'ABC123')
       expect(result).toEqual(mockRoom)
     })
 
@@ -98,6 +98,7 @@ describe('Room Store', () => {
     it('应该成功加入房间', async () => {
       const mockRoom = {
         id: 'room_123',
+        code: 'ABC123',
         name: '测试房间',
         users: []
       }
@@ -108,9 +109,9 @@ describe('Room Store', () => {
       RoomApi.getRoom.mockResolvedValue({ data: mockRoom })
       SessionApi.joinRoom.mockResolvedValue({})
       
-      const result = await roomStore.joinRoom('room_123')
+      const result = await roomStore.joinRoom('ABC123')
       
-      expect(RoomApi.getRoom).toHaveBeenCalledWith('room_123', { sessionId: null })
+      expect(RoomApi.getRoom).toHaveBeenCalledWith('ABC123', { sessionId: null })
       expect(socketService.connect).toHaveBeenCalled()
       expect(roomStore.currentRoom).toEqual(mockRoom)
       expect(result).toEqual(mockRoom)
@@ -126,13 +127,13 @@ describe('Room Store', () => {
       RoomApi.getRoom.mockResolvedValue({ data: mockRoom })
       SessionApi.joinRoom.mockResolvedValue({})
       
-      const joinPromise = roomStore.joinRoom('room_123', sessionId)
+      const joinPromise = roomStore.joinRoom('ABC123', sessionId)
       
       // 等待 joinRoom 完成
       await joinPromise
       
-      // 验证历史记录API被调用（使用roomId）
-      expect(SessionApi.joinRoom).toHaveBeenCalledWith(sessionId, 'room_123')
+      // 验证历史记录API被调用（使用roomCode）
+      expect(SessionApi.joinRoom).toHaveBeenCalledWith(sessionId, 'ABC123')
       
       // 等待 setTimeout 执行 (500 ms)
       await new Promise(resolve => setTimeout(resolve, 600))
@@ -145,7 +146,7 @@ describe('Room Store', () => {
       const { RoomApi } = await import('@/services/api')
       RoomApi.getRoom.mockRejectedValue(new Error('房间不存在'))
       
-      await expect(roomStore.joinRoom('room_123'))
+      await expect(roomStore.joinRoom('ABC123'))
         .rejects.toThrow('房间不存在')
     })
   })
@@ -169,7 +170,7 @@ describe('Room Store', () => {
       
       roomStore.leaveRoom()
       
-      expect(socketService.leaveRoom).toHaveBeenCalledWith('room_123')
+      expect(socketService.leaveRoom).toHaveBeenCalledWith('ABC123')
       expect(roomStore.currentRoom).toBeNull()
       expect(roomStore.users).toEqual([])
       expect(roomStore.videoState).toEqual({

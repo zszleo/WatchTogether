@@ -89,10 +89,12 @@ describe('User Store', () => {
   describe('createSession', () => {
     it('应该创建新会话', async () => {
       const mockData = {
-        id: 'session_123',
-        nickname: '游客1234',
-        avatar: 'avatar1.png',
-        createdAt: '2024-01-01T10:00:00Z'
+        data: {
+          id: 'session_123',
+          nickname: '游客1234',
+          avatar: 'avatar1.png',
+          createdAt: '2024-01-01T10:00:00Z'
+        }
       }
       
       const { SessionApi } = await import('@/services/api')
@@ -105,15 +107,17 @@ describe('User Store', () => {
       expect(userStore.nickname).toBe('游客1234')
       expect(userStore.avatar).toBe('avatar1.png')
       expect(userStore.createdAt).toBe('2024-01-01T10:00:00Z')
-      expect(result).toEqual(mockData)
+      expect(result).toEqual(mockData.data)
     })
 
     it('应该在没有昵称时生成随机昵称', async () => {
       const mockData = {
-        id: 'session_123',
-        nickname: '游客1234',
-        avatar: 'avatar1.png',
-        createdAt: '2024-01-01T10:00:00Z'
+        data: {
+          id: 'session_123',
+          nickname: '游客1234',
+          avatar: 'avatar1.png',
+          createdAt: '2024-01-01T10:00:00Z'
+        }
       }
       
       const { SessionApi } = await import('@/services/api')
@@ -128,10 +132,12 @@ describe('User Store', () => {
 
     it('应该保存到 localStorage', async () => {
       const mockData = {
-        id: 'session_123',
-        nickname: '测试用户',
-        avatar: 'avatar1.png',
-        createdAt: '2024-01-01T10:00:00Z'
+        data: {
+          id: 'session_123',
+          nickname: '测试用户',
+          avatar: 'avatar1.png',
+          createdAt: '2024-01-01T10:00:00Z'
+        }
       }
       
       const { SessionApi } = await import('@/services/api')
@@ -163,8 +169,10 @@ describe('User Store', () => {
       userStore.sessionId = 'session_123'
       
       const mockUpdatedData = {
-        nickname: '新昵称',
-        avatar: 'avatar3.png'
+        data: {
+          nickname: '新昵称',
+          avatar: 'avatar3.png'
+        }
       }
       
       const { SessionApi } = await import('@/services/api')
@@ -185,8 +193,10 @@ describe('User Store', () => {
       userStore.createdAt = '2024-01-01T10:00:00Z'
       
       const mockUpdatedData = {
-        nickname: '新昵称',
-        avatar: 'avatar3.png'
+        data: {
+          nickname: '新昵称',
+          avatar: 'avatar3.png'
+        }
       }
       
       const { SessionApi } = await import('@/services/api')

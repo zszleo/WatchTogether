@@ -16,7 +16,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: { template: '<div>Home</div>' } },
-    { path: '/join/:roomId', component: { template: '<div>Join Room</div>' } }
+    { path: '/join/:roomCode', component: { template: '<div>Join Room</div>' } }
   ]
 })
 
@@ -90,7 +90,7 @@ describe('HistoryView', () => {
 
   describe('空状态测试', () => {
     it('没有历史记录时应该显示空状态', async () => {
-      SessionApi.getHistory.mockResolvedValue({ rooms: [] })
+      SessionApi.getHistory.mockResolvedValue({ data: { rooms: [] } })
       
       wrapper = mount(HistoryView, {
         global: {
@@ -105,7 +105,7 @@ describe('HistoryView', () => {
     })
 
     it('空状态应该有去首页创建房间链接', async () => {
-      SessionApi.getHistory.mockResolvedValue({ rooms: [] })
+      SessionApi.getHistory.mockResolvedValue({ data: { rooms: [] } })
       
       wrapper = mount(HistoryView, {
         global: {
@@ -137,19 +137,19 @@ describe('HistoryView', () => {
     it('有历史记录时应该显示历史列表', async () => {
       const mockHistory = [
         {
-          roomId: 'room-1',
+          roomCode: 'room-1',
           roomName: '测试房间1',
           joinedAt: '2024-01-15T10:00:00Z',
           userCount: 3
         },
         {
-          roomId: 'room-2',
+          roomCode: 'room-2',
           roomName: '测试房间2',
           joinedAt: '2024-01-16T14:30:00Z',
           userCount: 2
         }
       ]
-      SessionApi.getHistory.mockResolvedValue({ rooms: mockHistory })
+      SessionApi.getHistory.mockResolvedValue({ data: { rooms: mockHistory } })
       
       wrapper = mount(HistoryView, {
         global: {
@@ -164,7 +164,7 @@ describe('HistoryView', () => {
 
     it('应该显示房间名称', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -179,7 +179,7 @@ describe('HistoryView', () => {
 
     it('应该显示房间ID', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-123', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }]
+        data: { rooms: [{ roomCode: 'room-123', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -194,7 +194,7 @@ describe('HistoryView', () => {
 
     it('应该显示用户数量', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z', userCount: 5 }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z', userCount: 5 }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -210,7 +210,7 @@ describe('HistoryView', () => {
 
     it('应该显示重新加入按钮', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -225,7 +225,7 @@ describe('HistoryView', () => {
 
     it('点击历史卡片应该跳转到加入页面', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试房间', joinedAt: '2024-01-15T10:00:00Z' }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -245,7 +245,7 @@ describe('HistoryView', () => {
   describe('时间格式化测试', () => {
     it('应该格式化时间戳', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: '2024-01-15T10:30:00Z' }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: '2024-01-15T10:30:00Z' }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -261,7 +261,7 @@ describe('HistoryView', () => {
 
     it('应该处理无时间戳', async () => {
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: null }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: null }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -279,7 +279,7 @@ describe('HistoryView', () => {
     it('今天应该显示今天', async () => {
       const today = new Date()
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: today.toISOString() }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: today.toISOString() }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -297,7 +297,7 @@ describe('HistoryView', () => {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: yesterday.toISOString() }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: yesterday.toISOString() }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -315,7 +315,7 @@ describe('HistoryView', () => {
       const threeDaysAgo = new Date()
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: threeDaysAgo.toISOString() }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: threeDaysAgo.toISOString() }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -333,7 +333,7 @@ describe('HistoryView', () => {
       const tenDaysAgo = new Date()
       tenDaysAgo.setDate(tenDaysAgo.getDate() - 10)
       SessionApi.getHistory.mockResolvedValue({
-        rooms: [{ roomId: 'room-1', roomName: '测试', joinedAt: tenDaysAgo.toISOString() }]
+        data: { rooms: [{ roomCode: 'room-1', roomName: '测试', joinedAt: tenDaysAgo.toISOString() }] }
       })
       
       wrapper = mount(HistoryView, {
@@ -352,7 +352,7 @@ describe('HistoryView', () => {
   describe('未登录状态测试', () => {
     it('没有 sessionId 时不应该加载历史', async () => {
       userStore.sessionId = null
-      SessionApi.getHistory.mockResolvedValue({ rooms: [] })
+      SessionApi.getHistory.mockResolvedValue({ data: { rooms: [] } })
       
       wrapper = mount(HistoryView, {
         global: {

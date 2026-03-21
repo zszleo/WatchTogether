@@ -37,7 +37,6 @@ public class SessionService {
             session.setId(sessionId);
             session.setNickname(nickname);
             session.setAvatar(avatar);
-            session.setIsOnline(false);
             session.setCreatedAt(LocalDateTime.now());
             session.setUpdatedAt(LocalDateTime.now());
             session.setLastSeenAt(LocalDateTime.now());
@@ -144,7 +143,6 @@ public class SessionService {
     public void joinRoom(String sessionId, Long roomId) {
         LocalDateTime now = LocalDateTime.now();
         sessionRepository.updateRoom(sessionId, roomId, now);
-        log.info("Session {} joined room {}", sessionId, roomId);
     }
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)

@@ -85,12 +85,12 @@ describe('Socket Service', () => {
         socketService.socket.on('connect', resolve)
       })
       
-      const roomId = 'room_123'
+      const roomCode = 'room_123'
       const sessionId = 'session_123'
       
-      socketService.joinRoom(roomId, sessionId)
+      socketService.joinRoom(roomCode, sessionId)
       
-      expect(socketService.currentRoom.value).toEqual({ roomId, sessionId })
+      expect(socketService.currentRoom.value).toEqual({ roomCode, sessionId })
     }, 10000)
   })
 
@@ -103,7 +103,7 @@ describe('Socket Service', () => {
         socketService.socket.on('connect', resolve)
       })
       
-      socketService.currentRoom.value = { roomId: 'room_123', sessionId: 'session_123' }
+      socketService.currentRoom.value = { roomCode: 'room_123', sessionId: 'session_123' }
       
       socketService.leaveRoom('room_123')
       
@@ -295,7 +295,7 @@ describe('Socket Service', () => {
       
       // 应该自动重新加入房间
       expect(socketService.currentRoom.value).toEqual({
-        roomId: 'room_123',
+        roomCode: 'room_123',
         sessionId: 'session_123'
       })
     }, 15000)

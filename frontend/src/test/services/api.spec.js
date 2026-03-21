@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { SessionApi, RoomApi, FileApi, EmojiApi, HealthApi } from '@/services/api'
+import { SessionApi, RoomApi, FileApi, HealthApi } from '@/services/api'
 
 // 模拟 request 函数
 vi.mock('@/utils/request', () => ({
@@ -111,11 +111,11 @@ describe('API Services', () => {
     describe('joinRoom', () => {
       it('应该正确调用加入房间接口', async () => {
         const sessionId = 'session_123'
-        const roomId = 456
+        const roomCode = 'ABC123'
         
-        await SessionApi.joinRoom(sessionId, roomId)
+        await SessionApi.joinRoom(sessionId, roomCode)
         
-        expect(request).toHaveBeenCalledWith('/api/session/session_123/history/join/456', {
+        expect(request).toHaveBeenCalledWith('/api/session/session_123/history/join/ABC123', {
           method: 'POST'
         })
       })
@@ -166,12 +166,12 @@ describe('API Services', () => {
 
     describe('getRoom', () => {
       it('应该正确调用获取房间详情接口', async () => {
-        const roomId = 123
+        const roomCode = 'ABC123'
         const queryParams = { sessionId: 'session_123' }
         
-        await RoomApi.getRoom(roomId, queryParams)
+        await RoomApi.getRoom(roomCode, queryParams)
         
-        expect(request).toHaveBeenCalledWith('/api/room/123', {
+        expect(request).toHaveBeenCalledWith('/api/room/ABC123', {
           method: 'GET',
           params: queryParams,
           paramDefinitions: expect.any(Object)
@@ -181,12 +181,12 @@ describe('API Services', () => {
 
     describe('deleteRoom', () => {
       it('应该正确调用删除房间接口', async () => {
-        const roomId = 123
+        const roomCode = 'ABC123'
         const data = { sessionId: 'session_123' }
         
-        await RoomApi.deleteRoom(roomId, data)
+        await RoomApi.deleteRoom(roomCode, data)
         
-        expect(request).toHaveBeenCalledWith('/api/room/123', {
+        expect(request).toHaveBeenCalledWith('/api/room/ABC123', {
           method: 'DELETE',
           data
         })
@@ -195,12 +195,12 @@ describe('API Services', () => {
 
     describe('getChatMessages', () => {
       it('应该正确调用获取聊天消息接口', async () => {
-        const roomId = 123
+        const roomCode = 'ABC123'
         const queryParams = { page: 0, size: 20, sessionId: 'session_123' }
         
-        await RoomApi.getChatMessages(roomId, queryParams)
+        await RoomApi.getChatMessages(roomCode, queryParams)
         
-        expect(request).toHaveBeenCalledWith('/api/room/123/messages', {
+        expect(request).toHaveBeenCalledWith('/api/room/ABC123/messages', {
           method: 'GET',
           params: queryParams,
           paramDefinitions: expect.any(Object)
@@ -210,12 +210,12 @@ describe('API Services', () => {
 
     describe('getInviteLink', () => {
       it('应该正确调用获取邀请链接接口', async () => {
-        const roomId = 123
+        const roomCode = 'ABC123'
         const queryParams = { sessionId: 'session_123' }
         
-        await RoomApi.getInviteLink(roomId, queryParams)
+        await RoomApi.getInviteLink(roomCode, queryParams)
         
-        expect(request).toHaveBeenCalledWith('/api/room/123/invite', {
+        expect(request).toHaveBeenCalledWith('/api/room/ABC123/invite', {
           method: 'GET',
           params: queryParams,
           paramDefinitions: expect.any(Object)
@@ -223,20 +223,6 @@ describe('API Services', () => {
       })
     })
 
-    describe('getRoomByCode', () => {
-      it('应该正确调用通过房间码获取房间接口', async () => {
-        const roomCode = 'ABC123'
-        const queryParams = { sessionId: 'session_123' }
-        
-        await RoomApi.getRoomByCode(roomCode, queryParams)
-        
-        expect(request).toHaveBeenCalledWith('/api/room/code/ABC123', {
-          method: 'GET',
-          params: queryParams,
-          paramDefinitions: expect.any(Object)
-        })
-      })
-    })
   })
 
   describe('FileApi', () => {
@@ -281,60 +267,6 @@ describe('API Services', () => {
         expect(request).toHaveBeenCalledWith('/api/file/file_123', {
           method: 'DELETE',
           data
-        })
-      })
-    })
-  })
-
-  describe('EmojiApi', () => {
-    describe('getDefaultEmojis', () => {
-      it('应该正确调用获取默认表情接口', async () => {
-        await EmojiApi.getDefaultEmojis()
-        
-        expect(request).toHaveBeenCalledWith('/api/emoji/default', {
-          method: 'GET'
-        })
-      })
-    })
-
-    describe('getEmojisByNickname', () => {
-      it('应该正确调用根据昵称获取表情接口', async () => {
-        const nickname = '测试用户'
-        
-        await EmojiApi.getEmojisByNickname(nickname)
-        
-        expect(request).toHaveBeenCalledWith('/api/emoji/user/测试用户', {
-          method: 'GET'
-        })
-      })
-    })
-
-    describe('addEmojiByNickname', () => {
-      it('应该正确调用根据昵称添加表情接口', async () => {
-        const nickname = '测试用户'
-        const data = {
-          name: '自定义表情',
-          url: 'http://example.com/emoji.png'
-        }
-        
-        await EmojiApi.addEmojiByNickname(nickname, data)
-        
-        expect(request).toHaveBeenCalledWith('/api/emoji/user/测试用户', {
-          method: 'POST',
-          data
-        })
-      })
-    })
-
-    describe('deleteEmojiByNickname', () => {
-      it('应该正确调用根据昵称删除表情接口', async () => {
-        const nickname = '测试用户'
-        const emojiId = 123
-        
-        await EmojiApi.deleteEmojiByNickname(nickname, emojiId)
-        
-        expect(request).toHaveBeenCalledWith('/api/emoji/user/测试用户/123', {
-          method: 'DELETE'
         })
       })
     })

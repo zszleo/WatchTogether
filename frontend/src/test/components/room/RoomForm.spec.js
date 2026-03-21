@@ -1,10 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// Mock message module - must be before other imports
+vi.mock('@/utils/message', () => {
+  const mockMessage = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  }
+  return {
+    message: mockMessage,
+    default: mockMessage
+  }
+})
+
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import RoomForm from '@/components/room/RoomForm.vue'
 import { useUserStore } from '@/stores/user'
 import { useRoomStore } from '@/stores/room'
+import { message } from '@/utils/message'
 
 // 创建测试路由
 const router = createRouter({
@@ -213,7 +229,7 @@ describe('RoomForm', () => {
       await wrapper.find('form').trigger('submit')
       await flushPromises()
       
-      expect(window.alert).toHaveBeenCalledWith('创建失败')
+      expect(message.error).toHaveBeenCalledWith('创建失败')
     })
   })
 })

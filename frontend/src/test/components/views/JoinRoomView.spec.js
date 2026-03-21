@@ -1,10 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// Mock message module - must be before other imports
+vi.mock('@/utils/message', () => {
+  const mockMessage = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  }
+  return {
+    message: mockMessage,
+    default: mockMessage
+  }
+})
+
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import JoinRoomView from '@/views/JoinRoomView.vue'
 import { useUserStore } from '@/stores/user'
 import { useRoomStore } from '@/stores/room'
+import { message } from '@/utils/message'
 
 // 创建测试路由
 const router = createRouter({
@@ -12,8 +28,8 @@ const router = createRouter({
   routes: [
     { path: '/', component: { template: '<div>Home</div>' } },
     { path: '/join', component: JoinRoomView },
-    { path: '/join/:roomId', component: JoinRoomView },
-    { path: '/room/:roomId', component: { template: '<div>Room</div>' } }
+    { path: '/join/:roomCode', component: JoinRoomView },
+    { path: '/room/:roomCode', component: { template: '<div>Room</div>' } }
   ]
 })
 
@@ -248,7 +264,7 @@ describe('JoinRoomView', () => {
       await wrapper.find('form').trigger('submit')
       await flushPromises()
       
-      expect(window.alert).toHaveBeenCalledWith('加入失败')
+      expect(message.error).toHaveBeenCalledWith('加入失败')
     })
   })
 })

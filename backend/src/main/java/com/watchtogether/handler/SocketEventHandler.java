@@ -11,6 +11,7 @@ import com.watchtogether.utils.RedisUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
+import com.watchtogether.service.ChatMessageService;
 import com.watchtogether.service.RoomService;
 import com.watchtogether.service.SessionService;
 import com.watchtogether.model.Room;
@@ -44,7 +45,7 @@ public class SocketEventHandler {
     @Resource
     public SessionService sessionService;
     @Resource
-    public ChatMessageRepository chatMessageRepository;
+    public ChatMessageService chatMessageService;
 
     @OnConnect
     public void onConnect(SocketIOClient client) {
@@ -171,6 +172,7 @@ public class SocketEventHandler {
         
         // Update session with room ID
         sessionService.joinRoom(sessionId, roomId);
+        log.info("Session {} joined room {} (code: {})", sessionId, roomId, roomCode);
         
         // Update socket mapping with room info
         Map<String, String> socketMapping = new HashMap<>();
@@ -203,9 +205,17 @@ public class SocketEventHandler {
         }
         
         // Broadcast user joined to room
+        String joinNickname = sessionService.getSession(sessionId)
+                .map(s -> s.getNickname())
+                .orElse("Unknown User");
+        String joinAvatar = sessionService.getSession(sessionId)
+                .map(s -> s.getAvatar())
+                .orElse("👤");
         Map<String, Object> joinEvent = new HashMap<>();
         joinEvent.put("socketId", socketId);
         joinEvent.put("sessionId", sessionId);
+        joinEvent.put("nickname", joinNickname);
+        joinEvent.put("avatar", joinAvatar);
         joinEvent.put("timestamp", System.currentTimeMillis());
         socketServer.getRoomOperations(roomCode).sendEvent("user-joined", joinEvent);
         
@@ -248,9 +258,13 @@ public class SocketEventHandler {
             client.leaveRoom(roomCode);
             
             // Broadcast user left to room
+            String leaveNickname = sessionService.getSession(sessionId)
+                    .map(s -> s.getNickname())
+                    .orElse("Unknown User");
             Map<String, Object> leaveEvent = new HashMap<>();
             leaveEvent.put("socketId", socketId);
             leaveEvent.put("sessionId", sessionId);
+            leaveEvent.put("nickname", leaveNickname);
             leaveEvent.put("timestamp", System.currentTimeMillis());
             socketServer.getRoomOperations(roomCode).sendEvent("user-left", leaveEvent);
             
@@ -478,18 +492,24 @@ public class SocketEventHandler {
             }
             Room room = roomOpt.get();
             
-            ChatMessage chatMessage = new ChatMessage();
-            chatMessage.setRoomId(room.getId());
-            chatMessage.setSessionId(socketId);
-            chatMessage.setContent(message);
-            chatMessage.setMessageType("text");
-            chatMessage = chatMessageRepository.save(chatMessage);
+            // Get sessionId from socket mapping
+            Map<String, String> socketMapping = redisUtil.get(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
+            String userSessionId = socketMapping != null ? socketMapping.get("sessionId") : socketId;
             
+            ChatMessage chatMessage = chatMessageService.saveMessage(
+                    room.getId(),
+                    userSessionId,
+                    sender != null ? sender : "Anonymous",
+                    message,
+                    "text"
+            );
+
             Map<String, Object> chatEvent = new HashMap<>();
             chatEvent.put("id", chatMessage.getId());
-            chatEvent.put("message", message);
-            chatEvent.put("sender", sender != null ? sender : "Anonymous");
-            chatEvent.put("socketId", socketId);
+            chatEvent.put("content", message);
+            chatEvent.put("senderId", userSessionId);
+            chatEvent.put("senderNickname", chatMessage.getSenderNickname());
+            chatEvent.put("type", "text");
             chatEvent.put("timestamp", chatMessage.getCreatedAt() != null ? chatMessage.getCreatedAt().toString() : null);
             
             socketServer.getRoomOperations(roomCode).sendEvent("chat:message", chatEvent);
@@ -529,10 +549,20 @@ public class SocketEventHandler {
             usersData = new HashMap<>();
         }
         
+        // Get nickname and avatar from session
+        String nickname = sessionService.getSession(sessionId)
+                .map(s -> s.getNickname())
+                .orElse("Unknown User");
+        String avatar = sessionService.getSession(sessionId)
+                .map(s -> s.getAvatar())
+                .orElse("👤");
+        
         // Add user to the set
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("sessionId", sessionId);
         userInfo.put("socketId", socketId);
+        userInfo.put("nickname", nickname);
+        userInfo.put("avatar", avatar);
         userInfo.put("joinedAt", System.currentTimeMillis());
         
         usersData.put(sessionId, userInfo);
@@ -567,7 +597,7 @@ public class SocketEventHandler {
         if (usersObj instanceof Map) {
             Map<String, Object> usersData = (Map<String, Object>) usersObj;
             roomState.put("onlineUsers", usersData.keySet().size());
-            roomState.put("userList", usersData.values());
+            roomState.put("userList", new ArrayList<>(usersData.values()));
         } else {
             roomState.put("onlineUsers", 0);
             roomState.put("userList", new ArrayList<>());
