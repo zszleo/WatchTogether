@@ -1,7 +1,7 @@
 <template>
   <div class="page-profile">
     <header class="page-header">
-      <router-link to="/" class="back-link">← 返回</router-link>
+      <BackButton />
       <h1 class="page-title">个人中心</h1>
     </header>
     
@@ -19,7 +19,6 @@
               <span class="avatar-emoji">{{ form.avatar }}</span>
             </div>
             <div class="avatar-options">
-              <p class="avatar-label">选择头像</p>
               <div class="avatar-grid">
                 <button
                   v-for="emoji in avatarEmojis"
@@ -36,7 +35,6 @@
           
           <form @submit.prevent="saveProfile" class="profile-form">
             <div class="form-group">
-              <label class="form-label">昵称</label>
               <input
                 v-model="form.nickname"
                 type="text"
@@ -81,6 +79,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import message from '@/utils/message'
+import BackButton from '@/components/common/BackButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -167,7 +166,10 @@ onMounted(() => {
 
 .page-header {
   padding: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .back-link {
@@ -182,7 +184,7 @@ onMounted(() => {
 }
 
 .page-content {
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 24px;
 }
@@ -220,6 +222,9 @@ onMounted(() => {
 
 .avatar-display {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .avatar-emoji {
@@ -243,6 +248,7 @@ onMounted(() => {
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--text-primary);
+  text-align: center;
 }
 
 .avatar-grid {
@@ -287,6 +293,7 @@ onMounted(() => {
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--text-primary);
+  text-align: center;
 }
 
 .profile-info {

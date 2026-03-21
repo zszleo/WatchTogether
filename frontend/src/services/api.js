@@ -173,13 +173,27 @@ export const TestApi = {
 export const RoomApi = {
   /**
  * 获取公开房间列表
- * 获取所有公开可见的房间列表
+ * 获取公开可见的房间列表，支持分页
+ * @param {Object} queryParams - 查询参数
  * @param {Object} [options={}] - 请求选项（如headers、timeout等）
  * @returns {Promise} Promise对象
  */
-  getPublicRooms: async (options = {}) => {
+  getPublicRooms: async (queryParams = {}, options = {}) => {
     const path = `/api/room`;
-    return request(path, { method: 'GET', ...options });
+    return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
+  "page": {
+    "type": "integer",
+    "description": "页码（从0开始）",
+    "required": false,
+    "in": "query"
+  },
+  "size": {
+    "type": "integer",
+    "description": "每页大小，最大20",
+    "required": false,
+    "in": "query"
+  }
+}, ...options });
   },
   /**
  * 创建房间

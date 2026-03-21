@@ -1,7 +1,7 @@
 <template>
   <div class="page-join">
     <header class="page-header">
-      <router-link to="/" class="back-link">← 返回</router-link>
+      <BackButton />
       <h1 class="page-title">加入房间</h1>
     </header>
     
@@ -52,26 +52,6 @@
           {{ loading ? '加入中...' : '加入房间' }}
         </button>
       </form>
-      
-      <div class="divider">
-        <span>或</span>
-      </div>
-      
-      <div class="invite-section" v-if="inviteLink">
-        <p class="invite-label">邀请链接</p>
-        <div class="invite-link-box">
-          <input 
-            :value="inviteLink" 
-            type="text" 
-            class="input" 
-            readonly 
-            ref="linkInput"
-          />
-          <button @click="copyLink" class="btn btn-copy">
-            {{ copied ? '已复制' : '复制' }}
-          </button>
-        </div>
-      </div>
     </main>
   </div>
 </template>
@@ -82,6 +62,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useRoomStore } from '@/stores/room'
 import message from '@/utils/message'
+import BackButton from '@/components/common/BackButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -156,14 +137,13 @@ function copyLink() {
 
 .page-header {
   padding: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: var(--text-secondary);
-}
+
 
 .page-title {
   font-family: var(--font-display);

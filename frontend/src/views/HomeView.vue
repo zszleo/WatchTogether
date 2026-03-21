@@ -54,6 +54,22 @@
             <button class="btn btn-join">加入</button>
           </div>
         </div>
+        <div class="pagination">
+          <button 
+            class="btn btn-pagination" 
+            :disabled="publicRoomsPage === 0"
+            @click="loadPreviousPage"
+          >
+            上一页
+          </button>
+          <button 
+            class="btn btn-pagination" 
+            :disabled="!hasMorePublicRooms"
+            @click="loadNextPage"
+          >
+            下一页
+          </button>
+        </div>
       </section>
     </main>
   </div>
@@ -69,7 +85,7 @@ import ErrorComponent from '@/components/common/ErrorComponent.vue'
 
 const router = useRouter()
 const roomStore = useRoomStore()
-const { publicRooms, loadingPublicRooms, publicRoomsError } = storeToRefs(roomStore)
+const { publicRooms, loadingPublicRooms, publicRoomsError, publicRoomsPage, publicRoomsSize, hasMorePublicRooms } = storeToRefs(roomStore)
 
 onMounted(() => {
   roomStore.fetchPublicRooms()
@@ -77,6 +93,18 @@ onMounted(() => {
 
 function goToRoom(roomCode) {
   router.push(`/join/${roomCode}`)
+}
+
+function loadNextPage() {
+  if (hasMorePublicRooms.value) {
+    roomStore.fetchPublicRooms(publicRoomsPage.value + 1, publicRoomsSize.value)
+  }
+}
+
+function loadPreviousPage() {
+  if (publicRoomsPage.value > 0) {
+    roomStore.fetchPublicRooms(publicRoomsPage.value - 1, publicRoomsSize.value)
+  }
 }
 </script>
 
@@ -174,7 +202,7 @@ function goToRoom(roomCode) {
   justify-content: space-between;
   background: white;
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
+  padding: 16px 24px;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all var(--transition-base);
@@ -190,7 +218,7 @@ function goToRoom(roomCode) {
 .room-name {
   font-family: var(--font-display);
   font-size: 1.125rem;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
 }
 
 .room-meta {
@@ -215,6 +243,32 @@ function goToRoom(roomCode) {
 
 .btn-join:hover {
   background: var(--accent-secondary);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-pagination {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  transition: all var(--transition-base);
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .home-nav {

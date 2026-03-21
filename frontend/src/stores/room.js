@@ -16,6 +16,9 @@ export const useRoomStore = defineStore('room', () => {
   const publicRooms = ref([])
   const loadingPublicRooms = ref(false)
   const publicRoomsError = ref(null)
+  const publicRoomsPage = ref(0)
+  const publicRoomsSize = ref(4)
+  const hasMorePublicRooms = ref(true)
   
   const userCount = computed(() => users.value.length)
   
@@ -109,12 +112,15 @@ export const useRoomStore = defineStore('room', () => {
   }
   
   // 获取公开房间列表
-  async function fetchPublicRooms() {
+  async function fetchPublicRooms(page = 0, size = 4) {
     loadingPublicRooms.value = true
     publicRoomsError.value = null
     try {
-      const resp = await RoomApi.getPublicRooms()
+      const resp = await RoomApi.getPublicRooms({ page, size })
       publicRooms.value = resp.data
+      publicRoomsPage.value = page
+      publicRoomsSize.value = size
+      hasMorePublicRooms.value = resp.data.length === size
     } catch (error) {
       publicRoomsError.value = error
       publicRooms.value = []
@@ -130,6 +136,9 @@ export const useRoomStore = defineStore('room', () => {
     publicRooms,
     loadingPublicRooms,
     publicRoomsError,
+    publicRoomsPage,
+    publicRoomsSize,
+    hasMorePublicRooms,
     userCount,
     createRoom,
     joinRoom,

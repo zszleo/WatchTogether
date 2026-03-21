@@ -3,7 +3,6 @@
     <div class="room-header">
       <div class="header-left">
         <button class="btn-leave" @click="leaveRoom">
-          <span class="leave-icon">&larr;</span>
           离开房间
         </button>
       </div>
@@ -199,7 +198,7 @@ function handleVideoUpload(event) {
 }
 
 .btn-leave:hover {
-  background: var(--danger);
+  background: var(--error);
   color: white;
 }
 

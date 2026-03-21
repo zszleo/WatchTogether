@@ -11,12 +11,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Optional<Room> findByCode(String code);
 
     List<Room> findByIsPublicTrueOrderByLastActivityAtDesc();
+
+    Page<Room> findByIsPublicTrueOrderByLastActivityAtDesc(Pageable pageable);
 
     List<Room> findByIsPublicTrueAndNameContainingIgnoreCaseOrderByLastActivityAtDesc(String name);
 

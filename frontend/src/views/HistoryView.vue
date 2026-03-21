@@ -1,7 +1,7 @@
 <template>
   <div class="page-history">
     <header class="page-header">
-      <router-link to="/" class="back-link">← 返回</router-link>
+      <BackButton />
       <h1 class="page-title">历史记录</h1>
     </header>
     
@@ -46,6 +46,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { SessionApi } from '@/services/api'
+import BackButton from '@/components/common/BackButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -105,14 +106,13 @@ onMounted(() => {
 
 .page-header {
   padding: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: var(--text-secondary);
-}
+
 
 .page-title {
   font-family: var(--font-display);

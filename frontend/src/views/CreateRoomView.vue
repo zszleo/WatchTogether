@@ -1,7 +1,7 @@
 <template>
   <div class="page-create">
     <header class="page-header">
-      <router-link to="/" class="back-link">← 返回</router-link>
+      <BackButton />
       <h1 class="page-title">创建房间</h1>
     </header>
     
@@ -13,6 +13,7 @@
 
 <script setup>
 import RoomForm from '@/components/room/RoomForm.vue'
+import BackButton from '@/components/common/BackButton.vue'
 </script>
 
 <style scoped>
@@ -25,14 +26,13 @@ import RoomForm from '@/components/room/RoomForm.vue'
 
 .page-header {
   padding: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: var(--text-secondary);
-}
+
 
 .page-title {
   font-family: var(--font-display);

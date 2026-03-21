@@ -17,6 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static com.watchtogether.utils.RedisUtil.KEY_PREFIX_ROOM_PLAYBACK;
 import static com.watchtogether.utils.RedisUtil.KEY_PREFIX_ROOM_USERS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -231,10 +235,11 @@ class RoomServiceTest {
     void getPublicRooms_ShouldReturnPublicRoomsWithOnlineCount() {
         // Arrange
         List<Room> rooms = Arrays.asList(mockRoom);
-        when(roomRepository.findByIsPublicTrueOrderByLastActivityAtDesc()).thenReturn(rooms);
+        Page<Room> roomPage = new PageImpl<>(rooms);
+        when(roomRepository.findByIsPublicTrueOrderByLastActivityAtDesc(any(Pageable.class))).thenReturn(roomPage);
 
         // Act
-        List<RoomResp> results = roomService.getPublicRooms();
+        List<RoomResp> results = roomService.getPublicRooms(0, 4);
 
         // Assert
         assertEquals(1, results.size());

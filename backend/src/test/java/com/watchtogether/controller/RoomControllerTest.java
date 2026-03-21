@@ -173,7 +173,7 @@ class RoomControllerTest {
     @Test
     void getPublicRooms_ShouldReturnListOfRooms() throws Exception {
         // Arrange
-        when(roomService.getPublicRooms()).thenReturn(Arrays.asList(mockRoomResponse));
+        when(roomService.getPublicRooms(0, 4)).thenReturn(Arrays.asList(mockRoomResponse));
 
         // Act & Assert
         mockMvc.perform(get("/api/room"))
@@ -183,7 +183,7 @@ class RoomControllerTest {
                 .andExpect(jsonPath("$.data[0].id", is(1)))
                 .andExpect(jsonPath("$.data[0].name", is("Test Room")));
 
-        verify(roomService).getPublicRooms();
+        verify(roomService).getPublicRooms(0, 4);
     }
 
     @Test

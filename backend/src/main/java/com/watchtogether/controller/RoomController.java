@@ -58,11 +58,17 @@ public class RoomController {
     @GetMapping
     @Operation(
         summary = "获取公开房间列表",
-        description = "获取所有公开可见的房间列表"
+        description = "获取公开可见的房间列表，支持分页"
     )
-    public ResponseEntity<ApiResp<List<RoomResp>>> getPublicRooms() {
-        log.info("getPublicRooms called");
-        List<RoomResp> rooms = roomService.getPublicRooms();
+    public ResponseEntity<ApiResp<List<RoomResp>>> getPublicRooms(
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "页码（从0开始）", example = "0")
+            int page,
+            @RequestParam(defaultValue = "4")
+            @Parameter(description = "每页大小，最大20", example = "4")
+            int size) {
+        log.info("getPublicRooms called with page: {}, size: {}", page, size);
+        List<RoomResp> rooms = roomService.getPublicRooms(page, size);
         return ResponseEntity.ok(ApiResp.success(rooms));
     }
 

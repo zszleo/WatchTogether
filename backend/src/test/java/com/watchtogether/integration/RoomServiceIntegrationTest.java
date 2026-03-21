@@ -153,7 +153,7 @@ class RoomServiceIntegrationTest {
         createRoomRequest.setIsPublic(false);
         roomService.createRoom(createRoomRequest, ownerSessionId);
 
-        List<RoomResp> publicRooms = roomService.getPublicRooms();
+        List<RoomResp> publicRooms = roomService.getPublicRooms(0, 4);
 
         assertThat(publicRooms).hasSize(1);
         assertEquals(publicRoom.getCode(), publicRooms.get(0).getCode());
@@ -173,7 +173,7 @@ class RoomServiceIntegrationTest {
         createRoomRequest.setName("Room 3");
         Room room3 = roomService.createRoom(createRoomRequest, ownerSessionId);
 
-        List<RoomResp> publicRooms = roomService.getPublicRooms();
+        List<RoomResp> publicRooms = roomService.getPublicRooms(0, 4);
 
         assertThat(publicRooms).hasSize(3);
         assertEquals(room3.getCode(), publicRooms.get(0).getCode());
@@ -286,7 +286,7 @@ class RoomServiceIntegrationTest {
         createRoomRequest.setIsPublic(false);
         roomService.createRoom(createRoomRequest, ownerSessionId);
 
-        List<RoomResp> publicRooms = roomService.getPublicRooms();
+        List<RoomResp> publicRooms = roomService.getPublicRooms(0, 4);
 
         assertThat(publicRooms).isEmpty();
     }

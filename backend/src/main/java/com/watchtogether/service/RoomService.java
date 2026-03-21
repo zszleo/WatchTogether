@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -88,10 +91,15 @@ public class RoomService {
         return roomRepository.findByCode(roomCode);
     }
 
-    public List<RoomResp> getPublicRooms() {
-        List<Room> rooms = roomRepository.findByIsPublicTrueOrderByLastActivityAtDesc();
+    public List<RoomResp> getPublicRooms(int page, int size) {
+        if (page < 0 || size < 1 || size > 20) {
+            throw new IllegalArgumentException("Invalid pagination parameters");
+        }
         
-        return rooms.stream().map(room -> {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Room> roomPage = roomRepository.findByIsPublicTrueOrderByLastActivityAtDesc(pageable);
+        
+        return roomPage.getContent().stream().map(room -> {
             RoomResp response = mapToRoomResponse(room);
             // Add online user count from Redis
             Integer onlineCount = getOnlineUserCount(room.getId());
