@@ -1,7 +1,7 @@
 /**
  * 请求参数对象
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-20T11:06:24.526Z
+ * 生成时间: 2026-03-21T16:08:21.605Z
  */
 
 /**
@@ -20,6 +20,12 @@
  * @typedef {Object} joinRoomRequest
  * @property {string} sessionId - 必填 - 会话ID
  * @property {string} roomCode - 必填 - 房间码
+ */
+/**
+ * 获取公开房间列表 请求参数
+ * @typedef {Object} getPublicRoomsRequest
+ * @property {integer} page - 可选 - 页码（从0开始）
+ * @property {integer} size - 可选 - 每页大小，最大20
  */
 /**
  * 上传文件 请求参数

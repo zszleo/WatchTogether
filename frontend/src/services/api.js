@@ -1,7 +1,7 @@
 /**
  * API 调用函数
  * 由 OpenAPI 代码生成器自动生成
- * 生成时间: 2026-03-20T11:06:24.526Z
+ * 生成时间: 2026-03-21T16:08:21.605Z
  */
 
 import { request } from '../utils/request';
@@ -178,7 +178,7 @@ export const RoomApi = {
  * @param {Object} [options={}] - 请求选项（如headers、timeout等）
  * @returns {Promise} Promise对象
  */
-  getPublicRooms: async (queryParams = {}, options = {}) => {
+  getPublicRooms: async (queryParams, options = {}) => {
     const path = `/api/room`;
     return request(path, { method: 'GET', params: queryParams, paramDefinitions: {
   "page": {
