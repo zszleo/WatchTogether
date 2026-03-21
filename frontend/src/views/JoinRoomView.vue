@@ -65,6 +65,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useRoomStore } from '@/stores/room'
+import message from '@/utils/message'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,7 +99,7 @@ const inviteLink = computed(() => {
 
 async function handleJoin() {
   if (!nickname.value.trim()) {
-    alert('请输入昵称')
+    message.warning('请输入昵称')
     return
   }
   
@@ -113,7 +114,7 @@ async function handleJoin() {
     await roomStore.joinRoom(roomCode.value, userStore.sessionId)
     router.push(`/room/${roomCode.value}`)
   } catch (error) {
-    alert(error.message || '加入房间失败')
+    message.error(error.message || '加入房间失败')
   } finally {
     loading.value = false
   }

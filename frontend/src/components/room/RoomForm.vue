@@ -64,6 +64,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useRoomStore } from '@/stores/room'
+import message from '@/utils/message'
 
 const emit = defineEmits(['success'])
 const router = useRouter()
@@ -107,7 +108,7 @@ async function handleSubmit() {
     emit('success', room)
     router.push(`/room/${room.id}`)
   } catch (error) {
-    alert(error.message || '创建房间失败')
+    message.error(error.message || '创建房间失败')
   } finally {
     loading.value = false
   }

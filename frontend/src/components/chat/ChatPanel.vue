@@ -38,6 +38,7 @@ import { useRoomStore } from '@/stores/room'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import { socketService } from '@/services/socket'
+import message from '@/utils/message'
 import MessageList from './MessageList.vue'
 import MessageInput from './MessageInput.vue'
 
@@ -100,9 +101,9 @@ async function copyInviteLink() {
   const link = `${window.location.origin}/join/${roomStore.currentRoom.code}`
   try {
     await navigator.clipboard.writeText(link)
-    alert('邀请链接已复制')
+    message.success('邀请链接已复制')
   } catch (error) {
-    alert('复制失败，请手动复制链接')
+    message.error('复制失败，请手动复制链接')
   }
 }
 

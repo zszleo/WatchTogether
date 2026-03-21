@@ -80,6 +80,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import message from '@/utils/message'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -115,9 +116,9 @@ async function saveProfile() {
       nickname: form.value.nickname,
       avatar: form.value.avatar
     })
-    alert('个人资料已更新')
+    message.success('个人资料已更新')
   } catch (error) {
-    alert('更新失败: ' + error.message)
+    message.error('更新失败: ' + error.message)
   } finally {
     loading.value = false
   }

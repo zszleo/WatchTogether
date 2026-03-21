@@ -63,6 +63,7 @@ import { useRoomStore } from '@/stores/room'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import { socketService } from '@/services/socket'
+import message from '@/utils/message'
 import VideoPlayer from '@/components/video/VideoPlayer.vue'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 
@@ -89,7 +90,7 @@ onMounted(async () => {
     // 加入房间
     await roomStore.joinRoom(roomCode, userStore.sessionId)
   } catch (error) {
-    alert('加入房间失败: ' + error.message)
+    message.error('加入房间失败: ' + error.message)
     router.push('/')
   }
 })
