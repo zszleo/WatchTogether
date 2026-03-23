@@ -14,38 +14,43 @@
  * @returns {Promise} Promise对象
 VITE_API_BASE_URL=http://localhost:18080 */
 export async function request(path, options = {}) {
-  let { 
-    method = 'GET', 
-    params, 
-    data, 
+  let {
+    method = "GET",
+    params,
+    data,
     headers = {},
     allowedParams,
     strictMode = false,
     paramDefinitions = {},
     requestInterceptor,
-    responseInterceptor
+    responseInterceptor,
   } = options;
-  
+
   // 构建完整URL
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-  const url = new URL(`${baseUrl}${path}`);
-  
+  const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  const baseUrl = rawBaseUrl.replace(/\/+$/, "");
+  const url = new URL(`${baseUrl}${path}`, window.location.origin);
+
   // 处理查询参数
   if (params) {
     // 确定允许的参数列表
     let allowedKeys = null;
-    
+
     if (allowedParams && Array.isArray(allowedParams)) {
       // 1. 如果指定了 allowedParams，使用它
       allowedKeys = allowedParams;
-    } else if (strictMode && paramDefinitions && Object.keys(paramDefinitions).length > 0) {
+    } else if (
+      strictMode &&
+      paramDefinitions &&
+      Object.keys(paramDefinitions).length > 0
+    ) {
       // 2. strictMode=true 且未指定 allowedParams，使用 OpenAPI 参数定义
       allowedKeys = Object.keys(paramDefinitions);
     }
-    
+
     if (allowedKeys) {
       // 有过滤逻辑
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (allowedKeys.includes(key)) {
           if (params[key] !== undefined && params[key] !== null) {
             url.searchParams.append(key, params[key]);
@@ -58,50 +63,50 @@ export async function request(path, options = {}) {
       });
     } else {
       // 默认行为：不过滤参数
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] !== undefined && params[key] !== null) {
           url.searchParams.append(key, params[key]);
         }
       });
     }
   }
-  
+
   // 设置请求头
   const defaultHeaders = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
-  
+
   // 自动添加 session ID header
-  const storedUser = localStorage.getItem('watchtogether_user');
+  const storedUser = localStorage.getItem("watchtogether_user");
   if (storedUser) {
     try {
       const userData = JSON.parse(storedUser);
       if (userData.sessionId) {
-        defaultHeaders['X-Session-Id'] = userData.sessionId;
+        defaultHeaders["X-Session-Id"] = userData.sessionId;
       }
     } catch (e) {
       // ignore parse errors
     }
   }
-  
+
   let requestHeaders = { ...defaultHeaders, ...headers };
-  
+
   // 应用请求拦截器
-  if (requestInterceptor && typeof requestInterceptor === 'function') {
+  if (requestInterceptor && typeof requestInterceptor === "function") {
     const interceptedRequest = requestInterceptor({
       url: url.toString(),
       method,
       headers: requestHeaders,
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     });
-    
+
     // 更新请求配置
     if (interceptedRequest.url) url.href = interceptedRequest.url;
     if (interceptedRequest.method) method = interceptedRequest.method;
     if (interceptedRequest.headers) requestHeaders = interceptedRequest.headers;
     if (interceptedRequest.body !== undefined) data = interceptedRequest.body;
   }
-  
+
   // 发送请求
   try {
     const response = await fetch(url.toString(), {
@@ -109,21 +114,21 @@ export async function request(path, options = {}) {
       headers: requestHeaders,
       body: data ? JSON.stringify(data) : undefined,
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     let result = await response.json();
-    
+
     // 应用响应拦截器
-    if (responseInterceptor && typeof responseInterceptor === 'function') {
+    if (responseInterceptor && typeof responseInterceptor === "function") {
       result = responseInterceptor(result);
     }
-    
+
     return result;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.error("API request failed:", error);
     throw error;
   }
 }

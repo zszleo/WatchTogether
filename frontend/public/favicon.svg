@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bubbleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8d4b7"/>
+      <stop offset="100%" style="stop-color:#96b895"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 对话气泡主体 -->
+  <path d="M16 2C8.268 2 2 7.373 2 14c0 3.314 1.579 6.313 4.125 8.469L5 28l5.5-2.75C12.219 25.734 14.048 26 16 26c7.732 0 14-5.373 14-12S23.732 2 16 2z" 
+        fill="url(#bubbleGradient)" 
+        stroke="#7aa87a" 
+        stroke-width="1.5"/>
+  
+  <!-- 播放按钮三角形 -->
+  <path d="M12 8v12l10-6z" 
+        fill="#c4824a"/>
+</svg>
