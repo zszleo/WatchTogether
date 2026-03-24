@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.watchtogether.common.AppConstants.*;
+
 @Slf4j
 @Service
 public class RoomService {
@@ -36,7 +38,6 @@ public class RoomService {
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
     public Room createRoom(CreateRoomReq request, String ownerSessionId) {
-        log.debug("Starting transaction for createRoom, ownerSessionId: {}", ownerSessionId);
         try {
             String roomCode = generateRoomCode();
             
@@ -56,7 +57,6 @@ public class RoomService {
             // Cache room in Redis
             cacheRoom(room);
             
-            log.debug("Transaction committed successfully for room: {}", room.getId());
             log.info("Created new room: {} (code: {}) owned by session {}", 
                        room.getId(), roomCode, ownerSessionId);
             return room;
@@ -67,27 +67,15 @@ public class RoomService {
     }
 
     public Optional<Room> getRoomById(Long roomId) {
-        // Try Redis first
-        Map<String, Object> cached = redisUtil.getRoom(roomId.toString(), Map.class);
-        if (cached != null) {
-            Room room = mapToRoom(cached);
-            return Optional.of(room);
-        }
-        
         // Fallback to database
         Optional<Room> roomOpt = roomRepository.findById(roomId);
-        if (roomOpt.isPresent()) {
-            // Cache it for future use
-            cacheRoom(roomOpt.get());
-        }
+        // Cache it for future use
+        roomOpt.ifPresent(this::cacheRoom);
         
         return roomOpt;
     }
 
     public Optional<Room> getRoomByCode(String roomCode) {
-        // Try Redis first by finding room ID from code
-        // Note: We need to map code to ID, for simplicity query DB
-        // Could optimize with additional Redis mapping
         return roomRepository.findByCode(roomCode);
     }
 
@@ -102,37 +90,11 @@ public class RoomService {
         return roomPage.getContent().stream().map(room -> {
             RoomResp response = mapToRoomResponse(room);
             // Add online user count from Redis
-            Integer onlineCount = getOnlineUserCount(room.getId());
+            Integer onlineCount = getOnlineUserCount(room.getCode());
             response.setOnlineUserCount(onlineCount);
-            response.setInviteLink(generateInviteLink(room.getCode()));
+            response.setInviteLink("/join/" + room.getCode());
             return response;
         }).collect(Collectors.toList());
-    }
-
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
-    public boolean deleteRoom(Long roomId, String sessionId) {
-        Optional<Room> roomOpt = roomRepository.findById(roomId);
-        if (roomOpt.isEmpty()) {
-            return false;
-        }
-        
-        Room room = roomOpt.get();
-        // Check ownership
-        if (!sessionId.equals(room.getOwnerSessionId())) {
-            log.warn("Session {} attempted to delete room {} owned by {}", 
-                       sessionId, roomId, room.getOwnerSessionId());
-            return false;
-        }
-        
-        roomRepository.delete(room);
-        
-        // Clean up Redis cache
-        redisUtil.deleteRoom(roomId.toString());
-        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_USERS + roomId);
-        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_PLAYBACK + roomId);
-        
-        log.info("Deleted room: {} (code: {})", roomId, room.getCode());
-        return true;
     }
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
@@ -154,34 +116,29 @@ public class RoomService {
         roomRepository.delete(room);
         
         // Clean up Redis cache
-        redisUtil.deleteRoom(roomId.toString());
-        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_USERS + roomId);
-        redisUtil.delete(RedisUtil.KEY_PREFIX_ROOM_PLAYBACK + roomId);
+        redisUtil.delete(KEY_PREFIX_ROOM + room.getCode());
+        redisUtil.delete(KEY_PREFIX_ROOM_USERS + roomId);
+        redisUtil.delete(KEY_PREFIX_ROOM_PLAYBACK + roomId);
         
         log.info("Deleted room: {} (code: {})", roomId, roomCode);
         return true;
     }
 
-    public String generateInviteLink(String roomCode) {
-        // In a real app, this would be a full URL
-        // For now, return the room code as part of a path
-        return "/join/" + roomCode;
-    }
-
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
-    public void updateRoomActivity(Long roomId) {
-        roomRepository.updateLastActivity(roomId, LocalDateTime.now());
+    public void updateRoomActivity(String roomCode) {
+
+        roomRepository.updateLastActivityByCode(roomCode, LocalDateTime.now());
         
         // Redis update is intentionally outside transaction
         // If Redis fails, database is still updated (eventual consistency)
         // This is acceptable for activity tracking
         try {
-            Map<String, Object> cached = redisUtil.getRoom(roomId.toString(), Map.class);
+            Map cached = redisUtil.get(KEY_PREFIX_ROOM + roomCode, Map.class);
             if (cached != null) {
-                redisUtil.setRoom(roomId.toString(), cached);
+                redisUtil.set(KEY_PREFIX_ROOM + roomCode, cached);
             }
         } catch (Exception e) {
-            log.warn("Failed to update Redis for room activity {}: {}", roomId, e.getMessage());
+            log.warn("Failed to update Redis for room activity {}: {}", roomCode, e.getMessage());
         }
     }
 
@@ -196,29 +153,17 @@ public class RoomService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
-    public void updatePlaybackState(Long roomId, Double currentTime, Boolean isPlaying) {
-        LocalDateTime now = LocalDateTime.now();
-        roomRepository.updatePlaybackState(roomId, currentTime, isPlaying, now);
-        
-        // Update Redis playback cache
-        Map<String, Object> playbackState = new HashMap<>();
-        playbackState.put("currentTime", currentTime);
-        playbackState.put("isPlaying", isPlaying);
-        playbackState.put("updatedAt", now.toString());
-        redisUtil.setRoomPlayback(roomId.toString(), playbackState);
-    }
 
-    public Integer getOnlineUserCount(Long roomId) {
+    public Integer getOnlineUserCount(String roomCode) {
         try {
-            Object usersObj = redisUtil.getRoomUsers(roomId.toString());
+            Object usersObj = redisUtil.get(KEY_PREFIX_ROOM_USERS + roomCode);
             if (usersObj instanceof Map) {
                 Map<String, Object> usersData = (Map<String, Object>) usersObj;
                 return usersData.size();
             }
             return 0;
         } catch (Exception e) {
-            log.warn("Failed to get online user count for room {}: {}", roomId, e.getMessage());
+            log.warn("Failed to get online user count for room {}: {}", roomCode, e.getMessage());
             return 0;
         }
     }
@@ -255,7 +200,7 @@ public class RoomService {
         roomData.put("createdAt", room.getCreatedAt() != null ? room.getCreatedAt().toString() : null);
         roomData.put("updatedAt", room.getUpdatedAt() != null ? room.getUpdatedAt().toString() : null);
         
-        redisUtil.setRoom(room.getId().toString(), roomData);
+        redisUtil.set(KEY_PREFIX_ROOM + room.getCode(), roomData);
     }
 
     private Room mapToRoom(Map<String, Object> data) {
@@ -324,7 +269,7 @@ public class RoomService {
         response.setLastActivityAt(room.getLastActivityAt());
         response.setCreatedAt(room.getCreatedAt());
         response.setUpdatedAt(room.getUpdatedAt());
-        response.setInviteLink(generateInviteLink(room.getCode()));
+        response.setInviteLink("/join/" + room.getCode());
         
         return response;
     }

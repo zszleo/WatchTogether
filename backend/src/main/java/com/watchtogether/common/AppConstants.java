@@ -6,6 +6,22 @@ public class AppConstants {
         // Utility class
     }
 
+    // Key prefixes
+    public static final String KEY_PREFIX_SESSION = "session:";
+    public static final String KEY_PREFIX_ROOM = "room:";
+    public static final String KEY_PREFIX_ROOM_USERS = "room:users:";
+    public static final String KEY_PREFIX_ROOM_PLAYBACK = "room:playback:";
+    public static final String KEY_PREFIX_USER_SESSIONS = "user:sessions:";
+    public static final String KEY_PREFIX_SOCKET = "socket:";
+
+    // TTL constants (seconds)
+    public static final long TTL_SESSION = 7 * 24 * 60 * 60; // 7 days
+    public static final long TTL_ROOM = 24 * 60 * 60; // 24 hours
+    public static final long TTL_ROOM_USERS = 30 * 60; // 30 minutes
+    public static final long TTL_ROOM_PLAYBACK = 5 * 60; // 5 minutes
+
+
+
     // Session settings
     public static final int SESSION_ID_LENGTH = 32;
     public static final String SESSION_ID_PREFIX = "sess_";

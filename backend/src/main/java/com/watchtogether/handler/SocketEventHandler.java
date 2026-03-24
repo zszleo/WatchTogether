@@ -6,6 +6,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
+import com.watchtogether.model.Session;
 import com.watchtogether.utils.RedisUtil;
 
 import jakarta.annotation.Resource;
@@ -23,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import com.watchtogether.model.ChatMessage;
-import com.watchtogether.repository.ChatMessageRepository;
 import com.watchtogether.dto.event.JoinRoomEvent;
 import com.watchtogether.dto.event.LeaveRoomEvent;
 import com.watchtogether.dto.event.VideoPlayEvent;
@@ -31,6 +31,8 @@ import com.watchtogether.dto.event.VideoPauseEvent;
 import com.watchtogether.dto.event.VideoSeekEvent;
 import com.watchtogether.dto.event.VideoUrlChangeEvent;
 import com.watchtogether.dto.event.ChatMessageEvent;
+
+import static com.watchtogether.common.AppConstants.*;
 
 @Slf4j
 @Component
@@ -56,7 +58,7 @@ public class SocketEventHandler {
         Map<String, String> socketMapping = new HashMap<>();
         socketMapping.put("socketId", socketId);
         socketMapping.put("connectedAt", String.valueOf(System.currentTimeMillis()));
-        redisUtil.set(RedisUtil.KEY_PREFIX_SOCKET + socketId, socketMapping, RedisUtil.TTL_SESSION);
+        redisUtil.set(KEY_PREFIX_SOCKET + socketId, socketMapping, TTL_SESSION);
     }
 
     @OnDisconnect
@@ -66,15 +68,14 @@ public class SocketEventHandler {
         log.info("Client disconnected: {}", socketId);
         
         // Remove socket mapping
-        redisUtil.delete(RedisUtil.KEY_PREFIX_SOCKET + socketId);
+        redisUtil.delete(KEY_PREFIX_SOCKET + socketId);
         
         // Handle user leaving room if they were in one
         // Get socket mapping from Redis to get sessionId and room info
-        Map<String, String> socketMapping = redisUtil.get(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
+        Map socketMapping = redisUtil.get(KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
         if (socketMapping != null) {
-            String sessionId = socketMapping.get("sessionId");
-            String roomCode = socketMapping.get("roomCode");
-            String roomIdStr = socketMapping.get("roomId");
+            String sessionId = (String) socketMapping.get("sessionId");
+            String roomCode = (String) socketMapping.get("roomCode");
             
             if (roomCode != null) {
                 // Broadcast user left to room
@@ -86,19 +87,16 @@ public class SocketEventHandler {
                 
                 // Send system message for user disconnected
                 String nickname = sessionService.getSession(sessionId)
-                        .map(s -> s.getNickname())
+                        .map(Session::getNickname)
                         .orElse("Unknown User");
                 Map<String, Object> systemMessage = new HashMap<>();
                 systemMessage.put("type", "user-disconnected");
                 systemMessage.put("content", nickname + " 断开了连接");
-                systemMessage.put("roomId", roomCode);
                 systemMessage.put("timestamp", System.currentTimeMillis());
                 socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
                 
                 // Remove user from room users in Redis
-                if (roomIdStr != null && sessionId != null) {
-                    removeUserFromRoom(roomIdStr, sessionId);
-                }
+                removeUserFromRoom(roomCode, sessionId);
                 
                 // Update session to leave room
                 if (sessionId != null) {
@@ -106,18 +104,11 @@ public class SocketEventHandler {
                 }
                 
                 // Update room activity
-                if (roomIdStr != null) {
-                    try {
-                        Long roomId = Long.parseLong(roomIdStr);
-                        roomService.updateRoomActivity(roomId);
-                    } catch (NumberFormatException e) {
-                        log.warn("Invalid room ID format: {}", roomIdStr);
-                    }
-                }
+                roomService.updateRoomActivity(roomCode);
             }
             
             // Remove the session socket mapping
-            redisUtil.delete(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId);
+            redisUtil.delete(KEY_PREFIX_SESSION + "socket:" + socketId);
         }
     }
 
@@ -134,7 +125,7 @@ public class SocketEventHandler {
             if (ackSender.isAckRequested()) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("message", "Room ID is required");
+                error.put("message", "RoomCode is required");
                 ackSender.sendAckData(error);
             }
             return;
@@ -164,36 +155,33 @@ public class SocketEventHandler {
         }
         
         Room room = roomOpt.get();
-        Long roomId = room.getId();
-        String roomIdStr = roomId.toString();
-        
+
         // Join the socket.io room (using room code as room name)
         client.joinRoom(roomCode);
         
         // Update session with room ID
-        sessionService.joinRoom(sessionId, roomId);
-        log.info("Session {} joined room {} (code: {})", sessionId, roomId, roomCode);
+        sessionService.joinRoom(sessionId, room.getId());
+        log.info("Session {} joined room {}", sessionId, roomCode);
         
         // Update socket mapping with room info
         Map<String, String> socketMapping = new HashMap<>();
         socketMapping.put("socketId", socketId);
         socketMapping.put("roomCode", roomCode);
-        socketMapping.put("roomId", roomIdStr);
         socketMapping.put("sessionId", sessionId);
-        redisUtil.set(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, socketMapping, RedisUtil.TTL_SESSION);
+        redisUtil.set(KEY_PREFIX_SESSION + "socket:" + socketId, socketMapping, TTL_SESSION);
         
         // Add user to room users set in Redis
-        addUserToRoom(roomIdStr, sessionId, socketId);
+        addUserToRoom(roomCode, sessionId, socketId);
         
         // Update room activity
-        roomService.updateRoomActivity(roomId);
+        roomService.updateRoomActivity(roomCode);
         
         if (ackSender.isAckRequested()) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("roomId", roomCode);
+            response.put("roomCode", roomCode);
             Map<String, Object> roomInfo = new HashMap<>();
-            roomInfo.put("id", roomId);
+            roomInfo.put("id", room.getId());
             roomInfo.put("code", room.getCode());
             roomInfo.put("name", room.getName());
             roomInfo.put("videoUrl", room.getVideoUrl());
@@ -206,10 +194,10 @@ public class SocketEventHandler {
         
         // Broadcast user joined to room
         String joinNickname = sessionService.getSession(sessionId)
-                .map(s -> s.getNickname())
+                .map(Session::getNickname)
                 .orElse("Unknown User");
         String joinAvatar = sessionService.getSession(sessionId)
-                .map(s -> s.getAvatar())
+                .map(Session::getAvatar)
                 .orElse("👤");
         Map<String, Object> joinEvent = new HashMap<>();
         joinEvent.put("socketId", socketId);
@@ -221,12 +209,12 @@ public class SocketEventHandler {
         
         // Send system message for user joined
         String nickname = sessionService.getSession(sessionId)
-                .map(s -> s.getNickname())
+                .map(Session::getNickname)
                 .orElse("Unknown User");
         Map<String, Object> systemMessage = new HashMap<>();
         systemMessage.put("type", "user-joined");
         systemMessage.put("content", nickname + " 加入了房间");
-        systemMessage.put("roomId", roomCode);
+        systemMessage.put("roomCode", roomCode);
         systemMessage.put("timestamp", System.currentTimeMillis());
         socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
         
@@ -243,15 +231,14 @@ public class SocketEventHandler {
         log.info("Client {} leaving room {}", socketId, roomCode);
         
         // Get socket mapping from Redis to get sessionId and roomId
-        Map<String, String> socketMapping = redisUtil.get(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
+        Map socketMapping = redisUtil.get(KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
         if (socketMapping == null) {
             socketMapping = new HashMap<>();
         }
         
-        String sessionId = socketMapping.get("sessionId");
-        String storedRoomCode = socketMapping.get("roomCode");
-        String roomIdStr = socketMapping.get("roomId");
-        
+        String sessionId = (String) socketMapping.get("sessionId");
+        String storedRoomCode = (String) socketMapping.get("roomCode");
+
         // Validate that the client is leaving the correct room
         if (roomCode != null && !roomCode.trim().isEmpty() && storedRoomCode != null && storedRoomCode.equals(roomCode)) {
             // Leave the socket.io room
@@ -259,7 +246,7 @@ public class SocketEventHandler {
             
             // Broadcast user left to room
             String leaveNickname = sessionService.getSession(sessionId)
-                    .map(s -> s.getNickname())
+                    .map(Session::getNickname)
                     .orElse("Unknown User");
             Map<String, Object> leaveEvent = new HashMap<>();
             leaveEvent.put("socketId", socketId);
@@ -270,19 +257,16 @@ public class SocketEventHandler {
             
             // Send system message for user left
             String nickname = sessionService.getSession(sessionId)
-                    .map(s -> s.getNickname())
+                    .map(Session::getNickname)
                     .orElse("Unknown User");
             Map<String, Object> systemMessage = new HashMap<>();
             systemMessage.put("type", "user-left");
             systemMessage.put("content", nickname + " 离开了房间");
-            systemMessage.put("roomId", roomCode);
             systemMessage.put("timestamp", System.currentTimeMillis());
             socketServer.getRoomOperations(roomCode).sendEvent("system:message", systemMessage);
             
             // Remove user from room users in Redis
-            if (roomIdStr != null && sessionId != null) {
-                removeUserFromRoom(roomIdStr, sessionId);
-            }
+            removeUserFromRoom(roomCode, sessionId);
             
             // Update session to leave room
             if (sessionId != null) {
@@ -290,21 +274,14 @@ public class SocketEventHandler {
             }
             
             // Update room activity
-            if (roomIdStr != null) {
-                try {
-                    Long roomId = Long.parseLong(roomIdStr);
-                    roomService.updateRoomActivity(roomId);
-                } catch (NumberFormatException e) {
-                    log.warn("Invalid room ID format: {}", roomIdStr);
-                }
-            }
+            roomService.updateRoomActivity(roomCode);
         }
         
         // Update socket mapping to remove room info
         Map<String, String> updatedMapping = new HashMap<>();
         updatedMapping.put("socketId", socketId);
         updatedMapping.put("connectedAt", String.valueOf(System.currentTimeMillis()));
-        redisUtil.set(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, updatedMapping, RedisUtil.TTL_SESSION);
+        redisUtil.set(KEY_PREFIX_SESSION + "socket:" + socketId, updatedMapping, TTL_SESSION);
         
         if (ackSender.isAckRequested()) {
             Map<String, Object> response = new HashMap<>();
@@ -328,7 +305,7 @@ public class SocketEventHandler {
             playbackState.put("time", time != null ? time : 0.0);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomCode, playbackState);
+            redisUtil.set(KEY_PREFIX_ROOM_PLAYBACK + roomCode, playbackState, TTL_ROOM_PLAYBACK);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -365,7 +342,7 @@ public class SocketEventHandler {
             playbackState.put("playing", false);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomCode, playbackState);
+            redisUtil.set(KEY_PREFIX_ROOM_PLAYBACK + roomCode, playbackState, TTL_ROOM_PLAYBACK);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -401,7 +378,7 @@ public class SocketEventHandler {
             playbackState.put("time", time);
             playbackState.put("updatedBy", socketId);
             playbackState.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoomPlayback(roomCode, playbackState);
+            redisUtil.set(KEY_PREFIX_ROOM_PLAYBACK + roomCode, playbackState, TTL_ROOM_PLAYBACK);
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -437,7 +414,8 @@ public class SocketEventHandler {
             roomData.put("videoUrl", url);
             roomData.put("updatedBy", socketId);
             roomData.put("updatedAt", System.currentTimeMillis());
-            redisUtil.setRoom(roomCode, roomData);
+            redisUtil.set(KEY_PREFIX_ROOM + roomCode, roomData, TTL_ROOM);
+
             
             // Broadcast to all clients in room except sender
             Map<String, Object> syncEvent = new HashMap<>();
@@ -493,7 +471,7 @@ public class SocketEventHandler {
             Room room = roomOpt.get();
             
             // Get sessionId from socket mapping
-            Map<String, String> socketMapping = redisUtil.get(RedisUtil.KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
+            Map<String, String> socketMapping = redisUtil.get(KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
             String userSessionId = socketMapping != null ? socketMapping.get("sessionId") : socketId;
             
             ChatMessage chatMessage = chatMessageService.saveMessage(
@@ -538,12 +516,12 @@ public class SocketEventHandler {
         }
     }
     
-    public void addUserToRoom(String roomId, String sessionId, String socketId) {
+    public void addUserToRoom(String roomCode, String sessionId, String socketId) {
         // Get current users set from Redis
-        Object usersObj = redisUtil.getRoomUsers(roomId);
-        Map<String, Object> usersData = null;
+        Object usersObj = redisUtil.get(KEY_PREFIX_ROOM_USERS + roomCode);
+        Map<String,Object> usersData = null;
         if (usersObj instanceof Map) {
-            usersData = (Map<String, Object>) usersObj;
+            usersData = (Map) usersObj;
         }
         if (usersData == null) {
             usersData = new HashMap<>();
@@ -551,10 +529,10 @@ public class SocketEventHandler {
         
         // Get nickname and avatar from session
         String nickname = sessionService.getSession(sessionId)
-                .map(s -> s.getNickname())
+                .map(Session::getNickname)
                 .orElse("Unknown User");
         String avatar = sessionService.getSession(sessionId)
-                .map(s -> s.getAvatar())
+                .map(Session::getAvatar)
                 .orElse("👤");
         
         // Add user to the set
@@ -568,21 +546,20 @@ public class SocketEventHandler {
         usersData.put(sessionId, userInfo);
         
         // Save back to Redis
-        redisUtil.setRoomUsers(roomId, usersData);
+        redisUtil.set(KEY_PREFIX_ROOM_USERS + roomCode, usersData, TTL_ROOM_USERS);
     }
     
-    public void removeUserFromRoom(String roomId, String sessionId) {
-        Object usersObj = redisUtil.getRoomUsers(roomId);
-        if (usersObj instanceof Map) {
-            Map<String, Object> usersData = (Map<String, Object>) usersObj;
+    public void removeUserFromRoom(String roomCode, String sessionId) {
+        Object usersObj = redisUtil.get(KEY_PREFIX_ROOM_USERS + roomCode) ;
+        if (usersObj instanceof Map usersData) {
             usersData.remove(sessionId);
-            redisUtil.setRoomUsers(roomId, usersData);
+            redisUtil.set(KEY_PREFIX_ROOM_USERS + roomCode, usersData, TTL_ROOM_USERS);
         }
     }
     
     public void sendRoomState(SocketIOClient client, Room room, String roomCode) {
         Map<String, Object> roomState = new HashMap<>();
-        roomState.put("roomId", room.getId());
+        roomState.put("roomCode", room.getId());
         roomState.put("code", room.getCode());
         roomState.put("name", room.getName());
         roomState.put("videoUrl", room.getVideoUrl());
@@ -593,7 +570,7 @@ public class SocketEventHandler {
         roomState.put("updatedAt", room.getUpdatedAt() != null ? room.getUpdatedAt().toString() : null);
         
         // Get online users
-        Object usersObj = redisUtil.getRoomUsers(room.getId().toString());
+        Object usersObj = redisUtil.get(KEY_PREFIX_ROOM_USERS + room.getCode());
         if (usersObj instanceof Map) {
             Map<String, Object> usersData = (Map<String, Object>) usersObj;
             roomState.put("onlineUsers", usersData.keySet().size());

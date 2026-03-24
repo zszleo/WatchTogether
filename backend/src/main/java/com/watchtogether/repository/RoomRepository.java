@@ -43,8 +43,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
                              @Param("time") Double time, 
                              @Param("isPlaying") Boolean isPlaying, 
                              @Param("now") LocalDateTime now);
-
+                             
     @Modifying
-    @Query("UPDATE Room r SET r.lastActivityAt = :now WHERE r.id = :roomId")
-    void updateLastActivity(@Param("roomId") Long roomId, @Param("now") LocalDateTime now);
+    @Query("UPDATE Room r SET r.lastActivityAt = :now WHERE r.code = :roomCode")
+    void updateLastActivityByCode(@Param("roomCode") String roomCode, @Param("now") LocalDateTime now);
 }

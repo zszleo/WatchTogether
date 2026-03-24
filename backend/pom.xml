@@ -124,6 +124,14 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/watchtogether/dto/**/*.class</exclude>
+                                <exclude>com/watchtogether/model/**/*.class</exclude>
+                                <exclude>com/watchtogether/common/**/*.class</exclude>
+                                <exclude>com/watchtogether/controller/TestController.class</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
@@ -131,6 +139,14 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/watchtogether/dto/**/*</exclude>
+                                <exclude>com/watchtogether/model/**/*</exclude>
+                                <exclude>com/watchtogether/common/**/*</exclude>
+                                <exclude>com/watchtogether/controller/TestController.class</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>check</id>

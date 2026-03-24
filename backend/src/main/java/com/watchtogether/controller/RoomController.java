@@ -144,7 +144,7 @@ public class RoomController {
             return new ResponseEntity<>(ApiResp.unauthorized("Access denied"), HttpStatus.UNAUTHORIZED);
         }
         
-        String inviteLink = roomService.generateInviteLink(room.getCode());
+        String inviteLink = "/join/" + roomCode;
         return ResponseEntity.ok(ApiResp.success(inviteLink));
     }
 
@@ -197,7 +197,7 @@ public class RoomController {
         response.setLastActivityAt(room.getLastActivityAt());
         response.setCreatedAt(room.getCreatedAt());
         response.setUpdatedAt(room.getUpdatedAt());
-        response.setInviteLink(roomService.generateInviteLink(room.getCode()));
+        response.setInviteLink("/join/" + room.getCode());
         
         return response;
     }

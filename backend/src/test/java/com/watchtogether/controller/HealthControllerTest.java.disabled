@@ -1,0 +1,73 @@
+package com.watchtogether.controller;
+
+import com.watchtogether.dto.resp.ApiResp;
+import com.watchtogether.dto.resp.HealthCheckResp;
+import com.watchtogether.dto.resp.SimpleHealthResp;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(HealthController.class)
+class HealthControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @MockBean
+    private RedisConnection redisConnection;
+
+    @Test
+    void healthCheck_shouldReturnUpWhenRedisIsHealthy() throws Exception {
+        // Given
+        when(redisTemplate.getConnectionFactory()).thenReturn(mock(org.springframework.data.redis.connection.RedisConnectionFactory.class));
+        when(redisTemplate.getConnectionFactory().getConnection()).thenReturn(redisConnection);
+        when(redisConnection.ping()).thenReturn("PONG");
+
+        // When & Then
+        mockMvc.perform(get("/api/health")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("System status"))
+                .andExpect(jsonPath("$.data.status").value("UP"))
+                .andExpect(jsonPath("$.data.redis").value("UP"));
+    }
+
+    @Test
+    void healthCheck_shouldReturnDownWhenRedisFails() throws Exception {
+        // Given
+        when(redisTemplate.getConnectionFactory()).thenReturn(mock(org.springframework.data.redis.connection.RedisConnectionFactory.class));
+        when(redisTemplate.getConnectionFactory().getConnection()).thenReturn(redisConnection);
+        when(redisConnection.ping()).thenThrow(new RuntimeException("Redis connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/health")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("UP"))
+                .andExpect(jsonPath("$.data.redis").value("DOWN"));
+    }
+
+    @Test
+    void simpleHealth_shouldReturnSimpleResponse() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/health/simple")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.service").value("WatchTogether Backend"));
+    }
+}

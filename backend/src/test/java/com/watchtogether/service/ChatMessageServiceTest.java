@@ -2,22 +2,21 @@ package com.watchtogether.service;
 
 import com.watchtogether.dto.resp.ChatMessageResp;
 import com.watchtogether.model.ChatMessage;
+import com.watchtogether.model.Room;
 import com.watchtogether.repository.ChatMessageRepository;
+import com.watchtogether.repository.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -29,106 +28,192 @@ class ChatMessageServiceTest {
     @Mock
     private ChatMessageRepository chatMessageRepository;
 
+    @Mock
+    private RoomRepository roomRepository;
+
     @InjectMocks
     private ChatMessageService chatMessageService;
 
-    @Captor
-    private ArgumentCaptor<ChatMessage> messageCaptor;
-
-    @Captor
-    private ArgumentCaptor<Pageable> pageableCaptor;
-
-    private ChatMessage mockMessage;
+    private Long testRoomId;
+    private String testSessionId;
+    private String testSenderNickname;
+    private String testContent;
+    private ChatMessage testMessage;
+    private Room testRoom;
 
     @BeforeEach
     void setUp() {
-        mockMessage = new ChatMessage();
-        mockMessage.setId(1L);
-        mockMessage.setRoomId(100L);
-        mockMessage.setSessionId("session-123");
-        mockMessage.setContent("Hello World");
-        mockMessage.setMessageType("text");
-        mockMessage.setCreatedAt(LocalDateTime.now());
+        testRoomId = 1L;
+        testSessionId = "session123";
+        testSenderNickname = "TestUser";
+        testContent = "Hello, world!";
+
+        testMessage = new ChatMessage();
+        testMessage.setId(100L);
+        testMessage.setRoomId(testRoomId);
+        testMessage.setSessionId(testSessionId);
+        testMessage.setSenderNickname(testSenderNickname);
+        testMessage.setContent(testContent);
+        testMessage.setMessageType("text");
+        testMessage.setCreatedAt(LocalDateTime.now());
+
+        testRoom = new Room();
+        testRoom.setId(testRoomId);
+        testRoom.setCode("ROOM123");
+        testRoom.setName("Test Room");
     }
 
     @Test
-    void getChatMessages_WithValidParameters_ShouldReturnMessages() {
-        List<ChatMessage> messages = Arrays.asList(mockMessage);
-        Page<ChatMessage> page = new PageImpl<>(messages);
-        when(chatMessageRepository.findByRoomId(eq(100L), any(Pageable.class))).thenReturn(page);
+    void getChatMessages_shouldReturnMessagesWhenValidParameters() {
+        // Given
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<ChatMessage> messagePage = new PageImpl<>(Arrays.asList(testMessage), pageable, 1);
 
-        List<ChatMessageResp> result = chatMessageService.getChatMessages(100L, 0, 50);
+        when(chatMessageRepository.findByRoomId(eq(testRoomId), any(Pageable.class))).thenReturn(messagePage);
+        when(roomRepository.findById(testRoomId)).thenReturn(Optional.of(testRoom));
 
-        assertNotNull(result);
+        // When
+        List<ChatMessageResp> result = chatMessageService.getChatMessages(testRoomId, page, size);
+
+        // Then
         assertEquals(1, result.size());
-        assertEquals("Hello World", result.get(0).getContent());
-        assertEquals("session-123", result.get(0).getSessionId());
-        
-        verify(chatMessageRepository).findByRoomId(eq(100L), pageableCaptor.capture());
-        assertEquals(0, pageableCaptor.getValue().getPageNumber());
-        assertEquals(50, pageableCaptor.getValue().getPageSize());
+        ChatMessageResp resp = result.get(0);
+        assertEquals(testMessage.getId(), resp.getId());
+        assertEquals(testSessionId, resp.getSessionId());
+        assertEquals(testSenderNickname, resp.getSenderNickname());
+        assertEquals(testContent, resp.getContent());
+        assertEquals("text", resp.getMessageType());
+        assertEquals(testRoom.getCode(), resp.getRoomCode());
+        assertNotNull(resp.getCreatedAt());
+
+        verify(chatMessageRepository, times(1)).findByRoomId(eq(testRoomId), any(Pageable.class));
+        verify(roomRepository, times(1)).findById(testRoomId);
     }
 
     @Test
-    void getChatMessages_WithInvalidPage_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> 
-            chatMessageService.getChatMessages(100L, -1, 50));
+    void getChatMessages_shouldThrowExceptionWhenPageIsNegative() {
+        // Given
+        int page = -1;
+        int size = 10;
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> chatMessageService.getChatMessages(testRoomId, page, size));
+        assertEquals("Invalid pagination parameters", exception.getMessage());
+
+        verify(chatMessageRepository, never()).findByRoomId(anyLong(), any(Pageable.class));
     }
 
     @Test
-    void getChatMessages_WithInvalidSize_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> 
-            chatMessageService.getChatMessages(100L, 0, 0));
-        assertThrows(IllegalArgumentException.class, () -> 
-            chatMessageService.getChatMessages(100L, 0, 101));
+    void getChatMessages_shouldThrowExceptionWhenSizeIsZero() {
+        // Given
+        int page = 0;
+        int size = 0;
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> chatMessageService.getChatMessages(testRoomId, page, size));
+        assertEquals("Invalid pagination parameters", exception.getMessage());
+
+        verify(chatMessageRepository, never()).findByRoomId(anyLong(), any(Pageable.class));
     }
 
     @Test
-    void getChatMessages_WithEmptyResult_ShouldReturnEmptyList() {
-        Page<ChatMessage> emptyPage = new PageImpl<>(List.of());
-        when(chatMessageRepository.findByRoomId(eq(100L), any(Pageable.class))).thenReturn(emptyPage);
+    void getChatMessages_shouldThrowExceptionWhenSizeIsGreaterThan100() {
+        // Given
+        int page = 0;
+        int size = 101;
 
-        List<ChatMessageResp> result = chatMessageService.getChatMessages(100L, 0, 50);
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> chatMessageService.getChatMessages(testRoomId, page, size));
+        assertEquals("Invalid pagination parameters", exception.getMessage());
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        verify(chatMessageRepository, never()).findByRoomId(anyLong(), any(Pageable.class));
     }
 
     @Test
-    void saveMessage_WithValidData_ShouldSaveAndReturnMessage() {
+    void getChatMessages_shouldHandleEmptyRoomReference() {
+        // Given
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<ChatMessage> messagePage = new PageImpl<>(Arrays.asList(testMessage), pageable, 1);
+
+        when(chatMessageRepository.findByRoomId(eq(testRoomId), any(Pageable.class))).thenReturn(messagePage);
+        when(roomRepository.findById(testRoomId)).thenReturn(Optional.empty());
+
+        // When
+        List<ChatMessageResp> result = chatMessageService.getChatMessages(testRoomId, page, size);
+
+        // Then
+        assertEquals(1, result.size());
+        ChatMessageResp resp = result.get(0);
+        assertNull(resp.getRoomCode()); // Room code should be null when room not found
+    }
+
+    @Test
+    void saveMessage_shouldSaveMessageWithTextType() {
+        // Given
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
-            ChatMessage msg = invocation.getArgument(0);
-            msg.setId(1L);
-            msg.setCreatedAt(LocalDateTime.now());
-            return msg;
+            ChatMessage message = invocation.getArgument(0);
+            message.setId(100L);
+            message.setCreatedAt(LocalDateTime.now());
+            return message;
         });
 
-        ChatMessage result = chatMessageService.saveMessage(100L, "session-123","test_user", "Hello", "text");
+        // When
+        ChatMessage result = chatMessageService.saveMessage(testRoomId, testSessionId, testSenderNickname, testContent, null);
 
+        // Then
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals(100L, result.getRoomId());
-        assertEquals("session-123", result.getSessionId());
-        assertEquals("Hello", result.getContent());
-        assertEquals("text", result.getMessageType());
+        assertEquals(testRoomId, result.getRoomId());
+        assertEquals(testSessionId, result.getSessionId());
+        assertEquals(testSenderNickname, result.getSenderNickname());
+        assertEquals(testContent, result.getContent());
+        assertEquals("text", result.getMessageType()); // Default message type
+        assertNotNull(result.getCreatedAt());
 
-        verify(chatMessageRepository).save(messageCaptor.capture());
-        ChatMessage saved = messageCaptor.getValue();
-        assertEquals(100L, saved.getRoomId());
-        assertEquals("Hello", saved.getContent());
+        verify(chatMessageRepository, times(1)).save(any(ChatMessage.class));
     }
 
     @Test
-    void saveMessage_WithNullMessageType_ShouldUseDefaultType() {
+    void saveMessage_shouldSaveMessageWithCustomType() {
+        // Given
+        String messageType = "system";
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
-            ChatMessage msg = invocation.getArgument(0);
-            msg.setId(1L);
-            return msg;
+            ChatMessage message = invocation.getArgument(0);
+            message.setId(100L);
+            message.setCreatedAt(LocalDateTime.now());
+            return message;
         });
 
-        chatMessageService.saveMessage(100L, "session-123","test_user", "Hello", null);
+        // When
+        ChatMessage result = chatMessageService.saveMessage(testRoomId, testSessionId, testSenderNickname, testContent, messageType);
 
-        verify(chatMessageRepository).save(messageCaptor.capture());
-        assertEquals("text", messageCaptor.getValue().getMessageType());
+        // Then
+        assertNotNull(result);
+        assertEquals(messageType, result.getMessageType());
+    }
+
+    @Test
+    void saveMessage_shouldHandleNullContent() {
+        // Given
+        String nullContent = null;
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            message.setId(100L);
+            message.setCreatedAt(LocalDateTime.now());
+            return message;
+        });
+
+        // When
+        ChatMessage result = chatMessageService.saveMessage(testRoomId, testSessionId, testSenderNickname, nullContent, "text");
+
+        // Then
+        assertNotNull(result);
+        assertNull(result.getContent());
     }
 }

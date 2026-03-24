@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.watchtogether.common.AppConstants.*;
+
 @Slf4j
 @Service
 public class SessionService {
@@ -49,7 +51,7 @@ public class SessionService {
             sessionData.put("nickname", nickname);
             sessionData.put("avatar", avatar);
             sessionData.put("createdAt", session.getCreatedAt().toString());
-            redisUtil.setSession(sessionId, sessionData);
+            redisUtil.set(KEY_PREFIX_SESSION + sessionId, sessionData, TTL_SESSION);
             
             log.debug("Transaction committed successfully for session: {}", sessionId);
             log.info("Created new session: {} for nickname: {}", sessionId, nickname);
@@ -62,7 +64,7 @@ public class SessionService {
 
     public Optional<Session> getSession(String sessionId) {
         // Try Redis first
-        Map<String, Object> cached = redisUtil.getSession(sessionId, Map.class);
+        Map<String, Object> cached = redisUtil.get(KEY_PREFIX_SESSION + sessionId, Map.class);
         if (cached != null) {
             Session session = new Session();
             session.setId((String) cached.get("id"));
@@ -82,7 +84,7 @@ public class SessionService {
             sessionData.put("nickname", session.getNickname());
             sessionData.put("avatar", session.getAvatar());
             sessionData.put("createdAt", session.getCreatedAt().toString());
-            redisUtil.setSession(sessionId, sessionData);
+            redisUtil.set(KEY_PREFIX_SESSION + sessionId, sessionData, TTL_SESSION);
         }
         
         return sessionOpt;
@@ -94,7 +96,7 @@ public class SessionService {
         }
         
         // Check Redis cache first
-        if (redisUtil.hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId)) {
+        if (redisUtil.hasKey(KEY_PREFIX_SESSION + sessionId)) {
             return true;
         }
         
@@ -108,10 +110,10 @@ public class SessionService {
         sessionRepository.updateSocketInfo(sessionId, socketId, now);
         
         // Update Redis cache
-        Map<String, Object> sessionData = redisUtil.getSession(sessionId, Map.class);
+        Map<String, Object> sessionData = redisUtil.get(KEY_PREFIX_SESSION + sessionId, Map.class);
         if (sessionData != null) {
             sessionData.put("socketId", socketId);
-            redisUtil.setSession(sessionId, sessionData);
+            redisUtil.set(KEY_PREFIX_SESSION + sessionId, sessionData, TTL_SESSION);
         }
         
         log.info("Updated session {} with socket {}", sessionId, socketId);
@@ -123,9 +125,9 @@ public class SessionService {
         sessionRepository.updateLastSeen(sessionId, now);
         
         // Also update Redis TTL by re-setting
-        Map<String, Object> sessionData = redisUtil.getSession(sessionId, Map.class);
+        Map<String, Object> sessionData = redisUtil.get(KEY_PREFIX_SESSION + sessionId, Map.class);
         if (sessionData != null) {
-            redisUtil.setSession(sessionId, sessionData);
+            redisUtil.set(KEY_PREFIX_SESSION + sessionId, sessionData, TTL_SESSION);
         }
         
         log.debug("Updated last seen for session {}", sessionId);
@@ -135,7 +137,7 @@ public class SessionService {
     public void deleteSession(String sessionId) {
         sessionRepository.deleteById(sessionId);
         // todo 删除房间关联等相关数据
-        redisUtil.deleteSession(sessionId);
+        redisUtil.delete(KEY_PREFIX_SESSION + sessionId);
         log.info("Deleted session: {}", sessionId);
     }
 
@@ -173,7 +175,7 @@ public class SessionService {
             sessionData.put("nickname", session.getNickname());
             sessionData.put("avatar", session.getAvatar());
             sessionData.put("createdAt", session.getCreatedAt().toString());
-            redisUtil.setSession(sessionId, sessionData);
+            redisUtil.set(KEY_PREFIX_SESSION + sessionId, sessionData, TTL_SESSION);
             
             log.info("Updated session {} - nickname: {}, avatar: {}", sessionId, nickname, avatar);
             return Optional.of(session);

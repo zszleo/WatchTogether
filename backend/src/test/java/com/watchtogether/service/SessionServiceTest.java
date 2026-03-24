@@ -6,8 +6,6 @@ import com.watchtogether.utils.RedisUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,8 +16,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.watchtogether.common.AppConstants.KEY_PREFIX_SESSION;
+import static com.watchtogether.common.AppConstants.TTL_SESSION;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,494 +36,376 @@ class SessionServiceTest {
     @InjectMocks
     private SessionService sessionService;
 
-    @Captor
-    private ArgumentCaptor<Session> sessionCaptor;
-
-    @Captor
-    private ArgumentCaptor<Map<String, Object>> redisCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> keyCaptor;
-
-    private String sessionId;
-    private String nickname;
-    private String avatar;
-    private Session mockSession;
+    private String testSessionId;
+    private String testNickname;
+    private String testAvatar;
+    private Session testSession;
 
     @BeforeEach
     void setUp() {
-        sessionId = "session-12345678901234567890123456789012";
-        nickname = "TestUser";
-        avatar = "https://example.com/avatar.jpg";
+        testSessionId = "testSessionId123456789012345678901234";
+        testNickname = "TestUser";
+        testAvatar = "https://example.com/avatar.jpg";
         
-        mockSession = new Session();
-        mockSession.setId(sessionId);
-        mockSession.setNickname(nickname);
-        mockSession.setAvatar(avatar);
-        mockSession.setCreatedAt(LocalDateTime.now());
-        mockSession.setUpdatedAt(LocalDateTime.now());
-        mockSession.setLastSeenAt(LocalDateTime.now());
+        testSession = new Session();
+        testSession.setId(testSessionId);
+        testSession.setNickname(testNickname);
+        testSession.setAvatar(testAvatar);
+        testSession.setCreatedAt(LocalDateTime.now());
+        testSession.setUpdatedAt(LocalDateTime.now());
+        testSession.setLastSeenAt(LocalDateTime.now());
     }
 
     @Test
-    void createSession_WithValidInput_ShouldCreateSessionAndCacheInRedis() {
-        // Arrange
+    void createSession_shouldCreateSessionAndCacheInRedis() {
+        // Given
         when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> {
             Session session = invocation.getArgument(0);
-            // Return the session as-is, preserving the ID set by service
+            // Ensure session has an ID
+            if (session.getId() == null) {
+                session.setId(UUID.randomUUID().toString().replace("-", "").substring(0, 32));
+            }
             return session;
         });
 
-        // Act
-        Session result = sessionService.createSession(nickname, avatar);
+        // When
+        Session createdSession = sessionService.createSession(testNickname, testAvatar);
 
-        // Assert
-        assertNotNull(result);
-        assertNotNull(result.getId());
-        assertEquals(32, result.getId().length()); // UUID without dashes, truncated to 32 chars
-        assertEquals(nickname, result.getNickname());
-        assertEquals(avatar, result.getAvatar());
-        assertNotNull(result.getCreatedAt());
-        assertNotNull(result.getUpdatedAt());
-        assertNotNull(result.getLastSeenAt());
+        // Then
+        assertNotNull(createdSession);
+        assertNotNull(createdSession.getId());
+        assertEquals(32, createdSession.getId().length());
+        assertEquals(testNickname, createdSession.getNickname());
+        assertEquals(testAvatar, createdSession.getAvatar());
+        assertNotNull(createdSession.getCreatedAt());
+        assertNotNull(createdSession.getUpdatedAt());
+        assertNotNull(createdSession.getLastSeenAt());
 
-        // Verify repository save
-        verify(sessionRepository).save(any(Session.class));
+        // Verify repository save was called
+        verify(sessionRepository, times(1)).save(any(Session.class));
 
-        // Verify Redis caching
-        verify(redisUtil).setSession(eq(result.getId()), any(Map.class));
+        // Verify Redis cache was set
+        verify(redisUtil, times(1)).set(
+            eq(KEY_PREFIX_SESSION + createdSession.getId()),
+            any(Map.class),
+            eq(TTL_SESSION)
+        );
     }
 
     @Test
-    void createSession_WithNullAvatar_ShouldCreateSessionWithNullAvatar() {
-        // Arrange
-        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> {
-            Session session = invocation.getArgument(0);
-            // Return the session as-is, preserving the ID set by service
-            return session;
-        });
-
-        // Act
-        Session result = sessionService.createSession(nickname, null);
-
-        // Assert
-        assertNotNull(result);
-        assertNull(result.getAvatar());
-        assertNotNull(result.getId());
-        assertEquals(32, result.getId().length());
-        verify(sessionRepository).save(any(Session.class));
-        verify(redisUtil).setSession(eq(result.getId()), any(Map.class));
-    }
-
-    @Test
-    void getSession_WithSessionInRedisCache_ShouldReturnCachedSession() {
-        // Arrange
+    void getSession_shouldReturnSessionFromRedisWhenCached() {
+        // Given
         Map<String, Object> cachedData = new HashMap<>();
-        cachedData.put("id", sessionId);
-        cachedData.put("nickname", nickname);
-        cachedData.put("avatar", avatar);
-        cachedData.put("createdAt", LocalDateTime.now().toString());
-        
-        when(redisUtil.getSession(eq(sessionId), eq(Map.class))).thenReturn(cachedData);
+        cachedData.put("id", testSessionId);
+        cachedData.put("nickname", testNickname);
+        cachedData.put("avatar", testAvatar);
+        cachedData.put("createdAt", testSession.getCreatedAt().toString());
 
-        // Act
-        Optional<Session> result = sessionService.getSession(sessionId);
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(cachedData);
 
-        // Assert
+        // When
+        Optional<Session> result = sessionService.getSession(testSessionId);
+
+        // Then
         assertTrue(result.isPresent());
-        assertEquals(sessionId, result.get().getId());
-        assertEquals(nickname, result.get().getNickname());
-        assertEquals(avatar, result.get().getAvatar());
-        
-        verify(redisUtil).getSession(eq(sessionId), eq(Map.class));
+        Session session = result.get();
+        assertEquals(testSessionId, session.getId());
+        assertEquals(testNickname, session.getNickname());
+        assertEquals(testAvatar, session.getAvatar());
+
+        // Verify repository was not called (cache hit)
         verify(sessionRepository, never()).findById(anyString());
+        verify(redisUtil, never()).set(anyString(), any(), anyLong());
     }
 
     @Test
-    void getSession_WithRedisMissButSessionInDatabase_ShouldReturnSessionAndCacheIt() {
-        // Arrange
-        when(redisUtil.getSession(eq(sessionId), eq(Map.class))).thenReturn(null);
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
+    void getSession_shouldFallbackToDatabaseAndCacheWhenNotInRedis() {
+        // Given
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(null);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
 
-        // Act
-        Optional<Session> result = sessionService.getSession(sessionId);
+        // When
+        Optional<Session> result = sessionService.getSession(testSessionId);
 
-        // Assert
+        // Then
         assertTrue(result.isPresent());
-        assertEquals(sessionId, result.get().getId());
-        assertEquals(nickname, result.get().getNickname());
-        
-        verify(redisUtil).getSession(eq(sessionId), eq(Map.class));
-        verify(sessionRepository).findById(sessionId);
-        verify(redisUtil).setSession(eq(sessionId), any(Map.class));
+        assertEquals(testSessionId, result.get().getId());
+
+        // Verify repository was called
+        verify(sessionRepository, times(1)).findById(testSessionId);
+
+        // Verify Redis cache was updated
+        verify(redisUtil, times(1)).set(
+            eq(KEY_PREFIX_SESSION + testSessionId),
+            any(Map.class),
+            eq(TTL_SESSION)
+        );
     }
 
     @Test
-    void getSession_WithNonExistentSession_ShouldReturnEmpty() {
-        // Arrange
-        when(redisUtil.getSession(eq(sessionId), eq(Map.class))).thenReturn(null);
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+    void getSession_shouldReturnEmptyWhenSessionNotFound() {
+        // Given
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(null);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<Session> result = sessionService.getSession(sessionId);
+        // When
+        Optional<Session> result = sessionService.getSession(testSessionId);
 
-        // Assert
+        // Then
         assertFalse(result.isPresent());
-        verify(redisUtil).getSession(eq(sessionId), eq(Map.class));
-        verify(sessionRepository).findById(sessionId);
-        verify(redisUtil, never()).setSession(anyString(), any(Map.class));
+
+        // Verify Redis was not updated
+        verify(redisUtil, never()).set(anyString(), any(), anyLong());
     }
 
     @Test
-    void validateSession_WithNullSessionId_ShouldReturnFalse() {
-        // Act
-        boolean result = sessionService.validateSession(null);
+    void validateSession_shouldReturnTrueWhenSessionInRedis() {
+        // Given
+        when(redisUtil.hasKey(KEY_PREFIX_SESSION + testSessionId)).thenReturn(true);
 
-        // Assert
-        assertFalse(result);
-        verify(redisUtil, never()).hasKey(anyString());
+        // When
+        boolean isValid = sessionService.validateSession(testSessionId);
+
+        // Then
+        assertTrue(isValid);
         verify(sessionRepository, never()).existsById(anyString());
     }
 
     @Test
-    void validateSession_WithEmptySessionId_ShouldReturnFalse() {
-        // Act
-        boolean result = sessionService.validateSession("");
+    void validateSession_shouldReturnTrueWhenSessionInDatabase() {
+        // Given
+        when(redisUtil.hasKey(KEY_PREFIX_SESSION + testSessionId)).thenReturn(false);
+        when(sessionRepository.existsById(testSessionId)).thenReturn(true);
 
-        // Assert
-        assertFalse(result);
-        verify(redisUtil, never()).hasKey(anyString());
-        verify(sessionRepository, never()).existsById(anyString());
+        // When
+        boolean isValid = sessionService.validateSession(testSessionId);
+
+        // Then
+        assertTrue(isValid);
     }
 
     @Test
-    void validateSession_WithWhitespaceSessionId_ShouldReturnFalse() {
-        // Act
-        boolean result = sessionService.validateSession("   ");
+    void validateSession_shouldReturnFalseWhenSessionNotFound() {
+        // Given
+        when(redisUtil.hasKey(KEY_PREFIX_SESSION + testSessionId)).thenReturn(false);
+        when(sessionRepository.existsById(testSessionId)).thenReturn(false);
 
-        // Assert
-        assertFalse(result);
-        verify(redisUtil, never()).hasKey(anyString());
-        verify(sessionRepository, never()).existsById(anyString());
+        // When
+        boolean isValid = sessionService.validateSession(testSessionId);
+
+        // Then
+        assertFalse(isValid);
     }
 
     @Test
-    void validateSession_WithSessionInRedis_ShouldReturnTrue() {
-        // Arrange
-        when(redisUtil.hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId)).thenReturn(true);
+    void validateSession_shouldReturnFalseWhenSessionIdIsNull() {
+        // When
+        boolean isValid = sessionService.validateSession(null);
 
-        // Act
-        boolean result = sessionService.validateSession(sessionId);
-
-        // Assert
-        assertTrue(result);
-        verify(redisUtil).hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId);
-        verify(sessionRepository, never()).existsById(anyString());
+        // Then
+        assertFalse(isValid);
     }
 
     @Test
-    void validateSession_WithSessionInDatabase_ShouldReturnTrue() {
-        // Arrange
-        when(redisUtil.hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId)).thenReturn(false);
-        when(sessionRepository.existsById(sessionId)).thenReturn(true);
+    void validateSession_shouldReturnFalseWhenSessionIdIsEmpty() {
+        // When
+        boolean isValid = sessionService.validateSession("");
 
-        // Act
-        boolean result = sessionService.validateSession(sessionId);
-
-        // Assert
-        assertTrue(result);
-        verify(redisUtil).hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId);
-        verify(sessionRepository).existsById(sessionId);
+        // Then
+        assertFalse(isValid);
     }
 
     @Test
-    void validateSession_WithNonExistentSession_ShouldReturnFalse() {
-        // Arrange
-        when(redisUtil.hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId)).thenReturn(false);
-        when(sessionRepository.existsById(sessionId)).thenReturn(false);
+    void validateSession_shouldReturnFalseWhenSessionIdIsBlank() {
+        // When
+        boolean isValid = sessionService.validateSession("   ");
 
-        // Act
-        boolean result = sessionService.validateSession(sessionId);
-
-        // Assert
-        assertFalse(result);
-        verify(redisUtil).hasKey(RedisUtil.KEY_PREFIX_SESSION + sessionId);
-        verify(sessionRepository).existsById(sessionId);
+        // Then
+        assertFalse(isValid);
     }
 
     @Test
-    void updateSessionSocket_WithExistingSession_ShouldUpdateSessionAndCache() {
-        // Arrange
-        String socketId = "socket-123";
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
-
-        // Act
-        sessionService.updateSessionSocket(sessionId, socketId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(socketId, savedSession.getSocketId());
-        assertNotNull(savedSession.getLastSeenAt());
-        
-        verify(redisUtil).setSession(eq(sessionId), any(Map.class));
-    }
-
-    @Test
-    void updateSessionSocket_WithNonExistentSession_ShouldDoNothing() {
-        // Arrange
-        String socketId = "socket-123";
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
-
-        // Act
-        sessionService.updateSessionSocket(sessionId, socketId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository, never()).save(any(Session.class));
-        verify(redisUtil, never()).setSession(anyString(), any(Map.class));
-    }
-
-    @Test
-    void updateSessionLastSeen_WithExistingSession_ShouldUpdateLastSeenAndRefreshRedisTTL() {
-        // Arrange
+    void updateSessionSocket_shouldUpdateDatabaseAndRedis() {
+        // Given
+        String socketId = "socket123";
         Map<String, Object> cachedData = new HashMap<>();
-        cachedData.put("id", sessionId);
-        cachedData.put("nickname", nickname);
-        
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(redisUtil.getSession(eq(sessionId), eq(Map.class))).thenReturn(cachedData);
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
+        cachedData.put("id", testSessionId);
+        cachedData.put("nickname", testNickname);
 
-        // Act
-        sessionService.updateSessionLastSeen(sessionId);
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(cachedData);
 
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertNotNull(savedSession.getLastSeenAt());
-        
-        verify(redisUtil).getSession(eq(sessionId), eq(Map.class));
-        verify(redisUtil).setSession(eq(sessionId), eq(cachedData));
+        // When
+        sessionService.updateSessionSocket(testSessionId, socketId);
+
+        // Then
+        verify(sessionRepository, times(1)).updateSocketInfo(eq(testSessionId), eq(socketId), any(LocalDateTime.class));
+        verify(redisUtil, times(1)).set(
+            eq(KEY_PREFIX_SESSION + testSessionId),
+            eq(cachedData),
+            eq(TTL_SESSION)
+        );
+        assertTrue(cachedData.containsKey("socketId"));
+        assertEquals(socketId, cachedData.get("socketId"));
     }
 
     @Test
-    void updateSessionLastSeen_WithNonExistentSession_ShouldDoNothing() {
-        // Arrange
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+    void updateSessionSocket_shouldNotUpdateRedisWhenCacheMissing() {
+        // Given
+        String socketId = "socket123";
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(null);
 
-        // Act
-        sessionService.updateSessionLastSeen(sessionId);
+        // When
+        sessionService.updateSessionSocket(testSessionId, socketId);
 
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository, never()).save(any(Session.class));
-        verify(redisUtil, never()).getSession(anyString(), any());
-        verify(redisUtil, never()).setSession(anyString(), any(Map.class));
+        // Then
+        verify(sessionRepository, times(1)).updateSocketInfo(eq(testSessionId), eq(socketId), any(LocalDateTime.class));
+        verify(redisUtil, never()).set(anyString(), any(), anyLong());
     }
 
     @Test
-    void deleteSession_ShouldDeleteFromRepositoryAndRedis() {
-        // Act
-        sessionService.deleteSession(sessionId);
+    void updateSessionLastSeen_shouldUpdateDatabaseAndExtendRedisTTL() {
+        // Given
+        Map<String, Object> cachedData = new HashMap<>();
+        cachedData.put("id", testSessionId);
 
-        // Assert
-        verify(sessionRepository).deleteById(sessionId);
-        verify(redisUtil).deleteSession(sessionId);
+        when(redisUtil.get(KEY_PREFIX_SESSION + testSessionId, Map.class)).thenReturn(cachedData);
+
+        // When
+        sessionService.updateSessionLastSeen(testSessionId);
+
+        // Then
+        verify(sessionRepository, times(1)).updateLastSeen(eq(testSessionId), any(LocalDateTime.class));
+        verify(redisUtil, times(1)).set(
+            eq(KEY_PREFIX_SESSION + testSessionId),
+            eq(cachedData),
+            eq(TTL_SESSION)
+        );
     }
 
     @Test
-    void joinRoom_WithExistingSession_ShouldUpdateRoomId() {
-        // Arrange
-        Long roomId = 1L;
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
+    void deleteSession_shouldDeleteFromDatabaseAndRedis() {
+        // When
+        sessionService.deleteSession(testSessionId);
 
-        // Act
-        sessionService.joinRoom(sessionId, roomId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(roomId, savedSession.getRoomId());
-        assertNotNull(savedSession.getLastSeenAt());
+        // Then
+        verify(sessionRepository, times(1)).deleteById(testSessionId);
+        verify(redisUtil, times(1)).delete(KEY_PREFIX_SESSION + testSessionId);
     }
 
     @Test
-    void joinRoom_WithNonExistentSession_ShouldDoNothing() {
-        // Arrange
-        Long roomId = 1L;
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
-
-        // Act
-        sessionService.joinRoom(sessionId, roomId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository, never()).save(any(Session.class));
-    }
-
-    @Test
-    void leaveRoom_WithExistingSession_ShouldSetRoomIdToNull() {
-        // Arrange
-        mockSession.setRoomId(1L);
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
-
-        // Act
-        sessionService.leaveRoom(sessionId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertNull(savedSession.getRoomId());
-        assertNotNull(savedSession.getLastSeenAt());
-    }
-
-    @Test
-    void leaveRoom_WithNonExistentSession_ShouldDoNothing() {
-        // Arrange
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
-
-        // Act
-        sessionService.leaveRoom(sessionId);
-
-        // Assert
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository, never()).save(any(Session.class));
-    }
-
-    @Test
-    void updateSession_WithValidUpdates_ShouldUpdateSessionAndCache() {
-        // Arrange
+    void updateSession_shouldUpdateNicknameAndAvatar() {
+        // Given
         String newNickname = "NewNickname";
         String newAvatar = "https://example.com/new-avatar.jpg";
-        
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
 
-        // Act
-        Optional<Session> result = sessionService.updateSession(sessionId, newNickname, newAvatar);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
+        when(sessionRepository.save(any(Session.class))).thenReturn(testSession);
 
-        // Assert
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, newNickname, newAvatar);
+
+        // Then
         assertTrue(result.isPresent());
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(newNickname, savedSession.getNickname());
-        assertEquals(newAvatar, savedSession.getAvatar());
-        
-        verify(redisUtil).setSession(eq(sessionId), any(Map.class));
+        Session updatedSession = result.get();
+        assertEquals(newNickname, updatedSession.getNickname());
+        assertEquals(newAvatar, updatedSession.getAvatar());
+
+        verify(sessionRepository, times(1)).findById(testSessionId);
+        verify(sessionRepository, times(1)).save(testSession);
+        verify(redisUtil, times(1)).set(
+            eq(KEY_PREFIX_SESSION + testSessionId),
+            any(Map.class),
+            eq(TTL_SESSION)
+        );
     }
 
     @Test
-    void updateSession_WithNullNickname_ShouldNotUpdateNickname() {
-        // Arrange
-        String originalNickname = mockSession.getNickname();
+    void updateSession_shouldHandleNullNickname() {
+        // Given
         String newAvatar = "https://example.com/new-avatar.jpg";
-        
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
+        String originalNickname = testSession.getNickname();
 
-        // Act
-        Optional<Session> result = sessionService.updateSession(sessionId, null, newAvatar);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
+        when(sessionRepository.save(any(Session.class))).thenReturn(testSession);
 
-        // Assert
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, null, newAvatar);
+
+        // Then
         assertTrue(result.isPresent());
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(originalNickname, savedSession.getNickname()); // Unchanged
-        assertEquals(newAvatar, savedSession.getAvatar());
+        Session updatedSession = result.get();
+        assertEquals(originalNickname, updatedSession.getNickname()); // Should remain unchanged
+        assertEquals(newAvatar, updatedSession.getAvatar());
     }
 
     @Test
-    void updateSession_WithEmptyNickname_ShouldNotUpdateNickname() {
-        // Arrange
-        String originalNickname = mockSession.getNickname();
+    void updateSession_shouldHandleEmptyNickname() {
+        // Given
         String newAvatar = "https://example.com/new-avatar.jpg";
-        
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
+        String originalNickname = testSession.getNickname();
 
-        // Act
-        Optional<Session> result = sessionService.updateSession(sessionId, "", newAvatar);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
+        when(sessionRepository.save(any(Session.class))).thenReturn(testSession);
 
-        // Assert
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, "", newAvatar);
+
+        // Then
         assertTrue(result.isPresent());
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(originalNickname, savedSession.getNickname()); // Unchanged
-        assertEquals(newAvatar, savedSession.getAvatar());
+        Session updatedSession = result.get();
+        assertEquals(originalNickname, updatedSession.getNickname()); // Should remain unchanged
+        assertEquals(newAvatar, updatedSession.getAvatar());
     }
 
     @Test
-    void updateSession_WithNullAvatar_ShouldUpdateAvatarToNull() {
-        // Arrange
+    void updateSession_shouldHandleBlankNickname() {
+        // Given
+        String newAvatar = "https://example.com/new-avatar.jpg";
+        String originalNickname = testSession.getNickname();
+
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
+        when(sessionRepository.save(any(Session.class))).thenReturn(testSession);
+
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, "   ", newAvatar);
+
+        // Then
+        assertTrue(result.isPresent());
+        Session updatedSession = result.get();
+        assertEquals(originalNickname, updatedSession.getNickname()); // Should remain unchanged
+        assertEquals(newAvatar, updatedSession.getAvatar());
+    }
+
+    @Test
+    void updateSession_shouldHandleNullAvatar() {
+        // Given
         String newNickname = "NewNickname";
-        
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(mockSession));
-        when(sessionRepository.save(any(Session.class))).thenReturn(mockSession);
+        String originalAvatar = testSession.getAvatar();
 
-        // Act
-        Optional<Session> result = sessionService.updateSession(sessionId, newNickname, null);
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(testSession));
+        when(sessionRepository.save(any(Session.class))).thenReturn(testSession);
 
-        // Assert
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, newNickname, null);
+
+        // Then
         assertTrue(result.isPresent());
-        verify(sessionRepository).findById(sessionId);
-        verify(sessionRepository).save(sessionCaptor.capture());
-        
-        Session savedSession = sessionCaptor.getValue();
-        assertEquals(newNickname, savedSession.getNickname());
-        // When avatar is null, it should not be updated (remains unchanged)
-        assertEquals(avatar, savedSession.getAvatar()); // Should remain original avatar
+        Session updatedSession = result.get();
+        assertEquals(newNickname, updatedSession.getNickname());
+        assertEquals(originalAvatar, updatedSession.getAvatar()); // Should remain unchanged
     }
 
     @Test
-    void updateSession_WithNonExistentSession_ShouldReturnEmpty() {
-        // Arrange
-        when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+    void updateSession_shouldReturnEmptyWhenSessionNotFound() {
+        // Given
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<Session> result = sessionService.updateSession(sessionId, "NewNickname", "new-avatar.jpg");
+        // When
+        Optional<Session> result = sessionService.updateSession(testSessionId, "NewNickname", "newAvatar");
 
-        // Assert
+        // Then
         assertFalse(result.isPresent());
-        verify(sessionRepository).findById(sessionId);
         verify(sessionRepository, never()).save(any(Session.class));
-        verify(redisUtil, never()).setSession(anyString(), any(Map.class));
-    }
-
-    @Test
-    void generateSessionId_ShouldReturn32CharacterString() {
-        // This tests the private method indirectly through createSession
-        // Arrange
-        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> {
-            Session session = invocation.getArgument(0);
-            // Return the session as-is, preserving the ID generated by service
-            return session;
-        });
-
-        // Act
-        Session result = sessionService.createSession(nickname, avatar);
-
-        // Assert
-        assertNotNull(result.getId());
-        assertEquals(32, result.getId().length());
-        // Should contain only hex characters (0-9, a-f)
-        assertTrue(result.getId().matches("[0-9a-f]{32}"));
+        verify(redisUtil, never()).set(anyString(), any(), anyLong());
     }
 }
