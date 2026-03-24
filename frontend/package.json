@@ -14,6 +14,8 @@
     "generate:api": "node scripts/openapi-generator/index.js --output-dir './src/services' --utils-dir './src/utils'"
   },
   "dependencies": {
+    "artplayer": "^5.4.0",
+    "artplayer-plugin-danmuku": "^5.3.0",
     "emoji-mart-vue-fast": "^15.0.5",
     "pinia": "^2.1.7",
     "socket.io-client": "^4.7.2",
