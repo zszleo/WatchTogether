@@ -9,6 +9,7 @@ export const useRoomStore = defineStore('room', () => {
   const users = ref([])
   const videoState = ref({
     url: '',
+    name: '',
     isPlaying: false,
     currentTime: 0,
     duration: 0

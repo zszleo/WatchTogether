@@ -1,27 +1,41 @@
 <template>
   <div class="message-input-wrapper">
+    <div class="mode-switch">
+      <button
+        :class="{ active: mode === 'text' }"
+        @click="mode = 'text'"
+      >消息</button>
+      <button
+        :class="{ active: mode === 'danmaku' }"
+        @click="mode = 'danmaku'"
+      >弹幕</button>
+      <input
+        v-if="mode === 'danmaku'"
+        type="color"
+        v-model="danmakuColor"
+        class="color-picker"
+        title="弹幕颜色"
+      />
+    </div>
+
     <div class="input-container">
-      <button class="btn-emoji" @click="showEmojiPicker = !showEmojiPicker">
-        😀
-      </button>
-      
-      <input 
+      <button class="btn-emoji" @click="showEmojiPicker = !showEmojiPicker">😀</button>
+
+      <input
         v-model="message"
         type="text"
         class="input-field"
-        placeholder="发送消息..."
+        :placeholder="mode === 'danmaku' ? '发送弹幕...' : '发送消息...'"
         @keyup.enter="send"
       />
-      
-      <button 
-        class="btn-send" 
+
+      <button
+        class="btn-send"
         @click="send"
         :disabled="!message.trim()"
-      >
-        发送
-      </button>
+      >{{ mode === 'danmaku' ? '发射' : '发送' }}</button>
     </div>
-    
+
     <div v-if="showEmojiPicker" class="emoji-picker-wrapper" ref="emojiPickerWrapper">
       <EmojiPicker @select="insertEmoji" />
     </div>
@@ -29,18 +43,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import EmojiPicker from './EmojiPicker.vue'
 
+const props = defineProps({
+  danmakuEnabled: { type: Boolean, default: true }
+})
+
 const emit = defineEmits(['send'])
+
 const message = ref('')
+const mode = ref('text')
+const danmakuColor = ref('#FFFFFF')
 const showEmojiPicker = ref(false)
 const emojiPickerWrapper = ref(null)
 
+// 根据弹幕启用状态自动切换模式
+watch(() => props.danmakuEnabled, (enabled) => {
+  mode.value = enabled ? 'danmaku' : 'text'
+}, { immediate: true })
+
 function send() {
   if (!message.value.trim()) return
-  emit('send', message.value.trim())
+
+  emit('send', message.value.trim(), mode.value, danmakuColor.value)
   message.value = ''
+  showEmojiPicker.value = false
 }
 
 function insertEmoji(emoji) {
@@ -74,6 +102,37 @@ onUnmounted(() => {
   padding: 12px 16px;
   background: white;
   border-top: 1px solid var(--bg-tertiary);
+}
+
+.mode-switch {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mode-switch button {
+  padding: 4px 12px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all var(--transition-fast);
+}
+
+.mode-switch button.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.color-picker {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
 }
 
 .input-container {

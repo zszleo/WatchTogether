@@ -13,6 +13,15 @@ public class ChatMessageEvent {
     @Schema(description = "消息内容", example = "大家好！")
     private String message;
 
-    @Schema(description = "发送者", example = "张三")
+    @Schema(description = "发送者昵称", example = "张三")
     private String sender;
+
+    @Schema(description = "发送者会话ID")
+    private String senderId;
+
+    @Schema(description = "消息类型: text, image, danmaku", example = "text")
+    private String type;
+
+    @Schema(description = "弹幕颜色(仅danmaku类型)", example = "#FFFFFF")
+    private String color;
 }

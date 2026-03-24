@@ -27,7 +27,8 @@ export const useChatStore = defineStore('chat', () => {
       senderId: msg.senderId,
       senderNickname: msg.senderNickname,
       timestamp: msg.timestamp || new Date().toISOString(),
-      createdAt: msg.createdAt
+      createdAt: msg.createdAt,
+      color: msg.color
     })
   }
   

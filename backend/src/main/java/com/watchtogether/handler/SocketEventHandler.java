@@ -416,18 +416,14 @@ public class SocketEventHandler {
             roomData.put("updatedAt", System.currentTimeMillis());
             redisUtil.set(KEY_PREFIX_ROOM + roomCode, roomData, TTL_ROOM);
 
-            
-            // Broadcast to all clients in room except sender
+            // Broadcast to ALL clients in room (including sender)
+            // Video URL change needs to sync to sender as well
             Map<String, Object> syncEvent = new HashMap<>();
             syncEvent.put("url", url);
             syncEvent.put("updatedBy", socketId);
             syncEvent.put("timestamp", System.currentTimeMillis());
             
-            socketServer.getRoomOperations(roomCode).getClients().forEach(c -> {
-                if (!c.getSessionId().equals(client.getSessionId())) {
-                    c.sendEvent("video:sync-url-change", syncEvent);
-                }
-            });
+            socketServer.getRoomOperations(roomCode).sendEvent("video:sync-url-change", syncEvent);
         }
         
         if (ackSender.isAckRequested()) {
@@ -443,8 +439,10 @@ public class SocketEventHandler {
         String roomCode = data.getRoomCode();
         String message = data.getMessage();
         String sender = data.getSender();
+        String type = data.getType();
+        String color = data.getColor();
         
-        log.info("Chat message in room {} from {}: {}", roomCode, sender, message);
+        log.info("Chat message in room {} from {}: {} (type: {})", roomCode, sender, message, type);
         
         if (roomCode == null || roomCode.trim().isEmpty()) {
             sendAckError(ackSender, "Room ID is required");
@@ -462,7 +460,6 @@ public class SocketEventHandler {
         }
         
         try {
-            // Find room by code to get roomId
             Optional<Room> roomOpt = roomService.getRoomByCode(roomCode);
             if (roomOpt.isEmpty()) {
                 sendAckError(ackSender, "Room not found");
@@ -470,16 +467,17 @@ public class SocketEventHandler {
             }
             Room room = roomOpt.get();
             
-            // Get sessionId from socket mapping
             Map<String, String> socketMapping = redisUtil.get(KEY_PREFIX_SESSION + "socket:" + socketId, Map.class);
             String userSessionId = socketMapping != null ? socketMapping.get("sessionId") : socketId;
+            
+            String messageType = type != null ? type : "text";
             
             ChatMessage chatMessage = chatMessageService.saveMessage(
                     room.getId(),
                     userSessionId,
                     sender != null ? sender : "Anonymous",
                     message,
-                    "text"
+                    messageType
             );
 
             Map<String, Object> chatEvent = new HashMap<>();
@@ -487,8 +485,12 @@ public class SocketEventHandler {
             chatEvent.put("content", message);
             chatEvent.put("senderId", userSessionId);
             chatEvent.put("senderNickname", chatMessage.getSenderNickname());
-            chatEvent.put("type", "text");
+            chatEvent.put("type", messageType);
             chatEvent.put("timestamp", chatMessage.getCreatedAt() != null ? chatMessage.getCreatedAt().toString() : null);
+            
+            if (color != null && !color.trim().isEmpty()) {
+                chatEvent.put("color", color);
+            }
             
             socketServer.getRoomOperations(roomCode).sendEvent("chat:message", chatEvent);
             

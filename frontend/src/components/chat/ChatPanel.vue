@@ -18,26 +18,41 @@
     
     <MessageList :messages="chatStore.sortedMessages" />
     
-    <MessageInput @send="handleSend" />
+    <MessageInput 
+      :danmaku-enabled="!isEmbed"
+      @send="handleSend" 
+    />
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import { useRoomStore } from '@/stores/room'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import { socketService } from '@/services/socket'
+import { useDanmaku } from '@/stores/danmaku'
+import { detectVideoSource } from '@/utils/videoSource'
 import MessageList from './MessageList.vue'
 import MessageInput from './MessageInput.vue'
 
 const roomStore = useRoomStore()
 const chatStore = useChatStore()
 const userStore = useUserStore()
+const { emitDanmaku } = useDanmaku()
+
+const videoUrl = computed(() => roomStore.videoState.url)
+const isEmbed = computed(() => {
+  const source = detectVideoSource(videoUrl.value)
+  return ['bilibili', 'youtube'].includes(source.type)
+})
 
 // 保存监听器回调以便清理
 const chatMessageCallback = (msg) => {
-  console.log('[ChatPanel] Received chat message:', msg)
+  // 自己发送的消息已经在本地添加过了，跳过
+  if (msg.senderId === userStore.sessionId) {
+    return
+  }
   chatStore.addMessage(msg)
 }
 const systemMessageCallback = (msg) => {
@@ -118,16 +133,34 @@ watch(() => roomStore.currentRoom?.code, async (roomCode, oldRoomCode) => {
   await chatStore.loadHistory(roomCode)
 }, { immediate: true })
 
-function handleSend(content, type = 'text') {
+function handleSend(content, type = 'text', color = '#FFFFFF') {
   if (!content.trim()) return
   if (!roomStore.currentRoom?.code) return
-  
+
+  // 本地立即添加消息到聊天列表
+  chatStore.addMessage({
+    id: `temp_${Date.now()}`,
+    content,
+    type,
+    color: type === 'danmaku' ? color : null,
+    senderId: userStore.sessionId,
+    senderNickname: userStore.nickname,
+    timestamp: new Date().toISOString()
+  })
+
+  // 如果是弹幕，立即显示在视频上
+  if (type === 'danmaku') {
+    emitDanmaku(content, color)
+  }
+
+  // 发送到服务器广播
   socketService.emitChatMessage(
     roomStore.currentRoom.code,
     content,
     type,
     userStore.sessionId,
-    userStore.nickname
+    userStore.nickname,
+    type === 'danmaku' ? color : null
   )
 }
 

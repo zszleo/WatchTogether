@@ -8,7 +8,7 @@
       </div>
       <div class="header-center">
         <span class="room-playing-info">
-          <span class="room-name">{{ roomStore.currentRoom?.name }}</span>：正在播放【视频名称】
+          <span class="room-name">{{ roomStore.currentRoom?.name }}</span>：正在播放【{{ videoName }}】
         </span>
       </div>
       <div class="header-right">
@@ -76,12 +76,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRoomStore } from '@/stores/room'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import { socketService } from '@/services/socket'
+import { detectVideoSource } from '@/utils/videoSource'
 import message from '@/utils/message'
 import VideoPlayer from '@/components/video/VideoPlayer.vue'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
@@ -95,6 +96,11 @@ const userStore = useUserStore()
 const videoPlayer = ref(null)
 const videoSource = ref('url')
 const videoUrlInput = ref('')
+
+const videoName = computed(() => {
+  const source = detectVideoSource(roomStore.videoState.url)
+  return source.name || '视频'
+})
 
 onMounted(async () => {
   const roomCode = route.params.roomCode

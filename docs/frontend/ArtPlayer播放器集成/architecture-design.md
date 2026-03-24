@@ -789,40 +789,66 @@ function insertEmoji(emoji) {
 
 ### 6.2 防重复机制详解
 
-**问题**：本地立即渲染 + 服务器广播会导致消息重复
+**问题**：后端广播给所有人（包括发送者），发送者会收到自己的消息
 
-**解决方案**：使用临时ID去重
+**解决方案**：使用 `senderId` + `pendingIds` 去重
 
 ```javascript
 // DanmakuBridge.vue - 发送弹幕
+const pendingIds = new Set()  // 最近发送的消息ID（短时缓存）
+
 function sendDanmaku(text, color) {
+  // 1. 本地生成临时ID并记录
   const tempId = `temp_${Date.now()}_${Math.random()}`
-  
-  // 1. 记录临时ID
-  pendingMessages.add(tempId)
+  pendingIds.add(tempId)
   
   // 2. 本地立即渲染弹幕
   playerRef.sendDanmaku({ text, color })
   
-  // 3. 本地添加消息到聊天列表（带tempId）
-  chatStore.addMessage({ ...data, tempId })
+  // 3. 本地添加消息到聊天列表（带 tempId 标记）
+  const messageData = {
+    id: tempId,
+    content: text,
+    type: 'danmaku',
+    color,
+    senderId: userStore.sessionId,
+    senderNickname: userStore.nickname,
+    timestamp: new Date().toISOString()
+  }
+  chatStore.addMessage(messageData)
   
-  // 4. 广播到服务器（不带tempId）
-  socketService.emit('chat:message', { ...data }) // 无tempId
+  // 4. 广播到服务器
+  socketService.emit('chat:message', {
+    roomCode: roomStore.currentRoom?.code,
+    content: text,
+    type: 'danmaku',
+    color,
+    senderId: userStore.sessionId,
+    senderNickname: userStore.nickname
+  })
   
   // 5. 清理临时ID（超时保护）
-  setTimeout(() => pendingMessages.delete(tempId), 5000)
+  setTimeout(() => pendingIds.delete(tempId), 3000)
 }
 
 // DanmakuBridge.vue - 接收弹幕
 function handleChatMessage(data) {
   // 检查是否是自己刚发送的消息
-  if (data.tempId && pendingMessages.has(data.tempId)) {
-    pendingMessages.delete(data.tempId)
-    return // 已处理，忽略
+  const isOwnMessage = data.senderId === userStore.sessionId
+  
+  if (isOwnMessage) {
+    // 自己发送的消息：检查 pendingIds
+    if (pendingIds.has(data.id)) {
+      // 自己刚发送的临时消息，pendingIds 中存在，忽略
+      pendingIds.delete(data.id)
+      return
+    }
+    // 自己发送的但在 pendingIds 中不存在（可能是服务器返回的正式消息）
+    // 这种情况说明本地已处理过，忽略
+    return
   }
   
-  // 其他客户端的消息：正常处理
+  // 其他用户的消息：正常处理
   chatStore.addMessage(data)
   if (data.type === 'danmaku') {
     playerRef.sendDanmaku({ text: data.content, color: data.color })
@@ -831,11 +857,24 @@ function handleChatMessage(data) {
 ```
 
 **关键点**：
-1. 发送时生成唯一`tempId`
-2. 本地消息带`tempId`添加到聊天列表
-3. 广播到服务器的消息**不带**`tempId`
-4. 服务器回传时，发送者通过`tempId`识别并忽略（因为pendingMessages中存在）
-5. 其他客户端正常接收处理
+1. 发送时生成 `tempId` 并存入 `pendingIds`
+2. 本地消息使用 `tempId` 作为临时 ID
+3. 广播消息的 ID 由服务器生成
+4. 收到自己消息时，通过 `senderId` 判断是自己的，直接忽略
+5. 其他用户的消息正常处理
+
+**更简洁的方案**：仅用 `senderId`
+
+```javascript
+// 发送时
+chatStore.addMessage({ tempId, senderId: myId, ... })
+
+// 接收时
+if (data.senderId === myId) {
+  return // 自己发送的消息已在本地处理，忽略服务器回传
+}
+chatStore.addMessage(data)
+```
 
 ### 6.3 消息数据结构
 

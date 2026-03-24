@@ -39,40 +39,64 @@
 
 ## 防重复机制实现
 
+后端广播机制：服务器将消息广播给房间内的所有人（包括发送者）
+
+### 简洁方案：使用 senderId 去重
+
 ```javascript
 // DanmakuBridge.vue
-const pendingMessages = new Set()
-
 function sendDanmaku(text, color) {
   const tempId = `temp_${Date.now()}_${Math.random()}`
   
-  // 1. 记录临时ID
-  pendingMessages.add(tempId)
-  
-  // 2. 本地立即渲染弹幕
+  // 1. 本地立即渲染弹幕
   playerRef.sendDanmaku({ text, color })
   
-  // 3. 本地添加消息（带tempId）
-  chatStore.addMessage({ ...data, tempId })
+  // 2. 本地添加消息（使用 tempId 作为临时 ID）
+  chatStore.addMessage({
+    id: tempId,
+    content: text,
+    type: 'danmaku',
+    color,
+    senderId: userStore.sessionId,
+    senderNickname: userStore.nickname,
+    timestamp: new Date().toISOString()
+  })
   
-  // 4. 广播到服务器（不带tempId）
-  socketService.emit('chat:message', { ...data })
-  
-  // 5. 清理（超时保护）
-  setTimeout(() => pendingMessages.delete(tempId), 5000)
+  // 3. 广播到服务器
+  socketService.emitChatMessage(
+    roomStore.currentRoom?.code,
+    text,
+    'danmaku',
+    userStore.sessionId,
+    userStore.nickname,
+    color
+  )
 }
 
 function handleChatMessage(data) {
-  // 检查是否是自己刚发送的
-  if (data.tempId && pendingMessages.has(data.tempId)) {
-    pendingMessages.delete(data.tempId)
-    return // 已处理，忽略
+  // 如果是自己发送的消息，忽略服务器回传（已在本地处理）
+  if (data.senderId === userStore.sessionId) {
+    return
   }
   
-  // 其他客户端的消息
+  // 其他用户的消息：正常处理
   chatStore.addMessage(data)
   if (data.type === 'danmaku') {
     playerRef.sendDanmaku({ text: data.content, color: data.color })
   }
 }
 ```
+
+### 后端已修改
+
+| 文件 | 修改内容 |
+|------|----------|
+| ChatMessageEvent.java | 新增 `type`, `senderId`, `color` 字段 |
+| SocketEventHandler.java | 使用前端传入的 `type`，支持弹幕类型 |
+
+### 验证点
+
+- [ ] 发送弹幕后本地聊天列表显示一次
+- [ ] 其他用户收到弹幕正常显示
+- [ ] 弹幕在视频上正常滚动
+- [ ] 弹幕同时在聊天列表显示

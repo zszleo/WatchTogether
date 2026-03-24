@@ -101,15 +101,19 @@ class SocketService {
   }
   
   // 聊天
-  emitChatMessage(roomCode, content, type = 'text', senderId, senderNickname) {
-    this.socket?.emit('chat:message', {
+  emitChatMessage(roomCode, content, type = 'text', senderId, senderNickname, color = null) {
+    const data = {
       roomCode,
       message: content,
       sender: senderNickname,
       type,
       senderId,
       timestamp: new Date().toISOString()
-    })
+    }
+    if (color) {
+      data.color = color
+    }
+    this.socket?.emit('chat:message', data)
   }
   
   // 事件监听
